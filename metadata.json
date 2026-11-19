@@ -1,0 +1,6 @@
+{
+  "name": "알 훔치기 영어 대작전 (Steal An Egg)",
+  "description": "로블록스 스타일의 2D 탑다운 아케이드 경기장에서 영어유치원 2년차 눈높이의 그림 영어 퀴즈를 풀며 알을 모으고 훔치는 싱글 파일 HTML5 교육용 웹게임",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

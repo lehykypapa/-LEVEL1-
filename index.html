@@ -1,0 +1,4031 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>알 훔치기 영어 대작전 (Steal An Egg)</title>
+  <meta name="description" content="로블록스 스타일의 2D 탑다운 아케이드 경기장에서 영어유치원 2년차 눈높이의 그림 영어 퀴즈를 풀며 알을 모으고 훔치는 싱글 파일 HTML5 교육용 웹게임" />
+  <meta property="og:title" content="알 훔치기 영어 대작전 (Steal An Egg)" />
+  <meta property="og:description" content="로블록스 스타일의 2D 탑다운 아케이드 경기장에서 영어유치원 2년차 눈높이의 그림 영어 퀴즈를 풀며 알을 모으고 훔치는 싱글 파일 HTML5 교육용 웹게임" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <style>
+    :root {
+      --bg-arena: #1b2838;
+      --hud-bg: rgba(15, 23, 42, 0.9);
+      --panel-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --blue-team: #2563eb;
+      --red-team: #dc2626;
+      --green-team: #16a34a;
+      --yellow-team: #d97706;
+      --gold: #f59e0b;
+      --font-sans: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: var(--bg-arena);
+      font-family: var(--font-sans);
+      color: var(--text-main);
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* App Shell */
+    #game-shell {
+      position: relative;
+      width: 100%;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    /* Top HUD */
+    #top-hud {
+      position: relative;
+      z-index: 20;
+      height: 58px;
+      min-height: 58px;
+      background: var(--hud-bg);
+      border-bottom: 3px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      gap: 10px;
+      color: #f8fafc;
+      backdrop-filter: blur(8px);
+    }
+
+    .scoreboard {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .scoreboard::-webkit-scrollbar { display: none; }
+
+    .score-item {
+      display: flex;
+      flex-direction: column;
+      min-width: 84px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid rgba(255, 255, 255, 0.14);
+      border-radius: 10px;
+      padding: 4px 8px;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .score-item.is-player {
+      background: rgba(37, 99, 235, 0.25);
+      border-color: rgba(96, 165, 250, 0.7);
+    }
+    .score-item.is-leading {
+      border-color: #fbbf24;
+    }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .team-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .team-brick {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.45);
+    }
+
+    .score-num {
+      font-variant-numeric: tabular-nums;
+      font-size: 13px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .score-bar-track {
+      margin-top: 3px;
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      transition: width 0.25s ease-out;
+    }
+
+    .hud-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .hud-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #e2e8f0;
+      white-space: nowrap;
+    }
+
+    .carry-indicator {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1.5px solid rgba(255, 255, 255, 0.18);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .carry-indicator.has-egg {
+      background: rgba(245, 158, 11, 0.22);
+      border-color: #fbbf24;
+      color: #fef3c7;
+    }
+
+    .buff-indicator {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+    .buff-indicator.active-speed {
+      display: flex;
+      background: rgba(245, 158, 11, 0.3);
+      border: 1.5px solid #fbbf24;
+      color: #fef08a;
+    }
+    .buff-indicator.active-shield {
+      display: flex;
+      background: rgba(14, 165, 233, 0.3);
+      border: 1.5px solid #38bdf8;
+      color: #e0f2fe;
+    }
+
+    .hud-icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 2px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.1s ease, background-color 0.15s ease;
+    }
+    .hud-icon-btn:hover { background: rgba(255, 255, 255, 0.2); }
+    .hud-icon-btn:active { transform: scale(0.92); }
+
+    /* Arena Viewport */
+    #arena-wrap {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      overflow: hidden;
+      background: #2f8539;
+      touch-action: none;
+    }
+
+    #game-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    /* Banner Notification inside Arena */
+    #toast-banner {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-14px);
+      z-index: 15;
+      pointer-events: none;
+      background: rgba(15, 23, 42, 0.88);
+      color: #ffffff;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 800;
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      white-space: nowrap;
+      max-width: 90vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+    #toast-banner.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Floating Touch Controls */
+    #floating-controls {
+      position: absolute;
+      inset: 0;
+      z-index: 18;
+      pointer-events: none;
+      touch-action: none;
+    }
+
+    /* Left Analog Virtual Joystick */
+    #joystick-base {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      width: 156px;
+      height: 156px;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.45);
+      border: 3px solid rgba(255, 255, 255, 0.55);
+      box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.35), 0 6px 18px rgba(0, 0, 0, 0.28);
+      pointer-events: auto;
+      touch-action: none;
+      opacity: 0.72;
+      transition: opacity 0.15s ease, border-color 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #joystick-base.active {
+      opacity: 0.96;
+      border-color: rgba(147, 197, 253, 0.95);
+    }
+
+    .joystick-ring {
+      position: absolute;
+      inset: 14px;
+      border-radius: 50%;
+      border: 1.5px dashed rgba(255, 255, 255, 0.28);
+      pointer-events: none;
+    }
+
+    .joy-arrow {
+      position: absolute;
+      font-size: 11px;
+      font-weight: 900;
+      color: rgba(255, 255, 255, 0.52);
+      pointer-events: none;
+      line-height: 1;
+    }
+    .joy-arrow.n  { top: 7px; left: 50%; transform: translateX(-50%); }
+    .joy-arrow.s  { bottom: 7px; left: 50%; transform: translateX(-50%); }
+    .joy-arrow.w  { left: 8px; top: 50%; transform: translateY(-50%); }
+    .joy-arrow.e  { right: 8px; top: 50%; transform: translateY(-50%); }
+
+    #joystick-knob {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(37, 99, 235, 0.84);
+      border: 3px solid rgba(219, 234, 254, 0.92);
+      box-shadow: 0 5px 0 rgba(30, 58, 138, 0.75), 0 6px 14px rgba(0, 0, 0, 0.35);
+      pointer-events: none;
+      transform: translate3d(0, 0, 0);
+      transition: background-color 0.12s ease;
+    }
+    #joystick-base.active #joystick-knob {
+      background: rgba(59, 130, 246, 0.96);
+    }
+
+    /* Right Action Buttons */
+    #action-buttons {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      display: flex;
+      align-items: flex-end;
+      gap: 14px;
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    .float-action-btn {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 24px;
+      color: #ffffff;
+      font-weight: 900;
+      cursor: pointer;
+      touch-action: none;
+      overflow: hidden;
+      transition: transform 0.1s ease, opacity 0.15s ease, box-shadow 0.1s ease, filter 0.15s ease;
+    }
+
+    #btn-powerup {
+      width: 86px;
+      height: 86px;
+      background: rgba(124, 58, 237, 0.82);
+      border: 3px solid rgba(221, 214, 254, 0.9);
+      box-shadow: 0 5px 0 rgba(76, 29, 149, 0.85), 0 8px 18px rgba(0, 0, 0, 0.3);
+      opacity: 0.82;
+    }
+    #btn-powerup:active, #btn-powerup.pressed {
+      transform: scale(0.92) translateY(3px);
+      box-shadow: 0 2px 0 rgba(76, 29, 149, 0.85);
+      opacity: 1;
+    }
+    #btn-powerup.on-cooldown {
+      background: rgba(51, 65, 85, 0.76);
+      border-color: rgba(148, 163, 184, 0.7);
+      box-shadow: 0 3px 0 rgba(15, 23, 42, 0.75);
+      opacity: 0.68;
+    }
+
+    .cooldown-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 0%;
+      background: rgba(250, 204, 21, 0.32);
+      pointer-events: none;
+      transition: height 0.1s linear;
+    }
+
+    #btn-grab {
+      width: 108px;
+      height: 108px;
+      border-radius: 30px;
+      background: rgba(234, 88, 12, 0.82);
+      border: 3.5px solid rgba(254, 215, 170, 0.95);
+      box-shadow: 0 6px 0 rgba(154, 52, 18, 0.88), 0 10px 22px rgba(0, 0, 0, 0.35);
+      opacity: 0.82;
+    }
+    #btn-grab.ready-target {
+      background: rgba(245, 158, 11, 0.95);
+      border-color: #fef08a;
+      opacity: 0.98;
+      animation: pulse-grab 0.8s ease-in-out infinite alternate;
+    }
+    #btn-grab:active, #btn-grab.pressed {
+      transform: scale(0.92) translateY(4px);
+      box-shadow: 0 2px 0 rgba(154, 52, 18, 0.88);
+      opacity: 1;
+    }
+
+    @keyframes pulse-grab {
+      from { transform: scale(1); }
+      to { transform: scale(1.05); }
+    }
+
+    .act-emoji {
+      font-size: 28px;
+      line-height: 1;
+      margin-bottom: 3px;
+      position: relative;
+      z-index: 2;
+    }
+    #btn-grab .act-emoji { font-size: 32px; }
+
+    .act-label {
+      font-size: 12px;
+      line-height: 1.15;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+    }
+
+    .act-key {
+      font-size: 10px;
+      opacity: 0.85;
+      margin-top: 2px;
+      font-weight: 700;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Modals / Overlays */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .roblox-card {
+      width: 100%;
+      max-width: 560px;
+      max-height: 90dvh;
+      overflow-y: auto;
+      background: #ffffff;
+      border-radius: 22px;
+      border: 4px solid #1e293b;
+      box-shadow: 0 10px 0 #0f172a, 0 24px 48px rgba(0, 0, 0, 0.45);
+      padding: 24px;
+      color: #0f172a;
+      animation: pop-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes pop-in {
+      from { opacity: 0; transform: scale(0.93) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .card-kicker {
+      font-size: 13px;
+      font-weight: 800;
+      color: #2563eb;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .card-title {
+      margin: 0 0 10px;
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1.25;
+      color: #0f172a;
+    }
+
+    .card-desc {
+      margin: 0 0 16px;
+      font-size: 15px;
+      line-height: 1.55;
+      color: #334155;
+    }
+
+    .rule-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .rule-box {
+      border: 2px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px 10px;
+      text-align: center;
+      background: #f8fafc;
+    }
+    .rule-box.common { border-color: #cbd5e1; background: #f8fafc; }
+    .rule-box.rare { border-color: #7dd3fc; background: #f0f9ff; }
+    .rule-box.legend { border-color: #fcd34d; background: #fffbeb; }
+
+    .rule-egg-icon { font-size: 26px; display: block; margin-bottom: 4px; }
+    .rule-egg-name { font-size: 13px; font-weight: 800; color: #0f172a; }
+    .rule-egg-pts { font-size: 14px; font-weight: 900; color: #d97706; margin: 2px 0; }
+    .rule-egg-note { font-size: 11px; color: #475569; line-height: 1.35; }
+
+    .controls-summary {
+      background: #f1f5f9;
+      border: 2px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #1e293b;
+      margin-bottom: 18px;
+    }
+
+    .primary-btn {
+      width: 100%;
+      padding: 14px 20px;
+      border-radius: 14px;
+      border: 3px solid #1e40af;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 17px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #1e3a8a;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease;
+    }
+    .primary-btn:hover { background: #1d4ed8; }
+    .primary-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 0 #1e3a8a;
+    }
+
+    .secondary-btn {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 14px;
+      border: 2.5px solid #cbd5e1;
+      background: #f8fafc;
+      color: #0f172a;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #cbd5e1;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease;
+    }
+    .secondary-btn:hover { background: #f1f5f9; }
+    .secondary-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #cbd5e1;
+    }
+
+    /* Quiz Modal Specifics */
+    .quiz-timer-wrap {
+      display: none;
+      margin-bottom: 14px;
+    }
+    .quiz-timer-wrap.active { display: block; }
+    .quiz-timer-top {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 800;
+      color: #7c3aed;
+      margin-bottom: 5px;
+    }
+    .quiz-timer-track {
+      width: 100%;
+      height: 10px;
+      background: #ede9fe;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1.5px solid #c4b5fd;
+    }
+    .quiz-timer-fill {
+      height: 100%;
+      width: 100%;
+      background: #7c3aed;
+      transition: width 0.05s linear;
+    }
+
+    .quiz-question-box {
+      background: #f8fafc;
+      border: 2.5px solid #cbd5e1;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .quiz-picture-box {
+      width: 100%;
+      height: 152px;
+      background: linear-gradient(180deg, #eff6ff 0%, #fefce8 100%);
+      border: 2.5px solid #bfdbfe;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      overflow: hidden;
+      box-shadow: inset 0 2px 6px rgba(15, 23, 42, 0.06);
+    }
+    .quiz-picture-box svg {
+      width: 100%;
+      height: 100%;
+      max-width: 240px;
+      max-height: 144px;
+      display: block;
+    }
+    .quiz-question-en {
+      font-size: 19px;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.35;
+      margin-bottom: 4px;
+    }
+    .quiz-question-sub {
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .quiz-choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .choice-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 14px;
+      min-height: 58px;
+      border-radius: 14px;
+      border: 2.5px solid #cbd5e1;
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 17px;
+      font-weight: 800;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #cbd5e1;
+      transition: transform 0.08s ease, border-color 0.1s ease, background-color 0.1s ease;
+    }
+    .choice-btn:hover:not(:disabled) {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+    .choice-btn:active:not(:disabled) {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #cbd5e1;
+    }
+    .choice-btn.correct {
+      background: #dcfce7;
+      border-color: #16a34a;
+      color: #14532d;
+      box-shadow: 0 4px 0 #16a34a;
+    }
+    .choice-btn.wrong {
+      background: #fee2e2;
+      border-color: #dc2626;
+      color: #7f1d1d;
+      box-shadow: 0 4px 0 #dc2626;
+    }
+
+    .choice-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: #e2e8f0;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .quiz-feedback {
+      min-height: 26px;
+      font-size: 14px;
+      font-weight: 800;
+      text-align: center;
+      margin-top: 4px;
+    }
+    .quiz-feedback.ok { color: #15803d; }
+    .quiz-feedback.err { color: #b91c1c; }
+
+    /* End Screen & Wrong Answer Review */
+    .ranking-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .rank-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 2px solid #e2e8f0;
+      background: #f8fafc;
+      font-weight: 800;
+    }
+    .rank-row.is-me {
+      background: #eff6ff;
+      border-color: #3b82f6;
+    }
+    .rank-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+    }
+    .rank-right {
+      font-variant-numeric: tabular-nums;
+      font-size: 15px;
+      color: #0f172a;
+    }
+
+    .end-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    #review-section {
+      display: none;
+      margin-top: 10px;
+      border-top: 2px dashed #cbd5e1;
+      padding-top: 14px;
+    }
+    #review-section.open { display: block; }
+
+    .review-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 260px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .review-card {
+      border: 2px solid #fecaca;
+      background: #fff5f5;
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .review-thumb {
+      width: 60px;
+      height: 52px;
+      border-radius: 10px;
+      background: #eff6ff;
+      border: 1.5px solid #bfdbfe;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .review-thumb svg {
+      width: 54px;
+      height: 46px;
+      display: block;
+    }
+    .review-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .review-q {
+      font-size: 14px;
+      font-weight: 900;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+    .review-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .review-wrong { color: #dc2626; }
+    .review-correct { color: #16a34a; }
+    .review-kr { color: #334155; font-weight: 600; }
+
+    /* Responsive adjustments for smaller tablets / phones */
+    @media (max-width: 680px) {
+      #top-hud { padding: 0 8px; gap: 6px; height: 54px; min-height: 54px; }
+      .score-item { min-width: 68px; padding: 3px 6px; }
+      .score-row { font-size: 11px; }
+      .score-num { font-size: 12px; }
+      .carry-indicator { padding: 4px 7px; font-size: 11px; }
+      .rule-grid { grid-template-columns: 1fr; }
+      .quiz-choices { grid-template-columns: 1fr; }
+      .end-actions { grid-template-columns: 1fr; }
+      #joystick-base { left: 12px; bottom: 12px; width: 136px; height: 136px; }
+      #joystick-knob { width: 56px; height: 56px; }
+      #action-buttons { right: 10px; bottom: 12px; gap: 10px; }
+      #btn-powerup { width: 74px; height: 74px; }
+      #btn-grab { width: 92px; height: 92px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-shell">
+    <!-- Top HUD -->
+    <header id="top-hud">
+      <div class="scoreboard" id="scoreboard">
+        <div class="score-item is-player" id="hud-score-0">
+          <div class="score-row">
+            <span class="team-label"><span class="team-brick" style="background:#2563eb;"></span>나(파랑)</span>
+            <span class="score-num" id="score-val-0">0</span>
+          </div>
+          <div class="score-bar-track"><div class="score-bar-fill" id="score-bar-0" style="background:#60a5fa;"></div></div>
+        </div>
+        <div class="score-item" id="hud-score-1">
+          <div class="score-row">
+            <span class="team-label"><span class="team-brick" style="background:#dc2626;"></span>빨강봇</span>
+            <span class="score-num" id="score-val-1">0</span>
+          </div>
+          <div class="score-bar-track"><div class="score-bar-fill" id="score-bar-1" style="background:#f87171;"></div></div>
+        </div>
+        <div class="score-item" id="hud-score-2">
+          <div class="score-row">
+            <span class="team-label"><span class="team-brick" style="background:#16a34a;"></span>초록봇</span>
+            <span class="score-num" id="score-val-2">0</span>
+          </div>
+          <div class="score-bar-track"><div class="score-bar-fill" id="score-bar-2" style="background:#4ade80;"></div></div>
+        </div>
+        <div class="score-item" id="hud-score-3">
+          <div class="score-row">
+            <span class="team-label"><span class="team-brick" style="background:#d97706;"></span>노랑봇</span>
+            <span class="score-num" id="score-val-3">0</span>
+          </div>
+          <div class="score-bar-track"><div class="score-bar-fill" id="score-bar-3" style="background:#fbbf24;"></div></div>
+        </div>
+      </div>
+
+      <div class="hud-right">
+        <div class="hud-status">
+          <span id="hud-timer" style="font-variant-numeric:tabular-nums; color:#cbd5e1;">⏱ 00:00 · 목표 400점</span>
+          <div class="buff-indicator" id="buff-indicator"></div>
+          <div class="carry-indicator" id="carry-indicator">🥚 빈 손</div>
+        </div>
+        <button type="button" class="hud-icon-btn" id="btn-sound" title="소리 켜기/끄기" aria-label="소리 켜기 또는 끄기">🔊</button>
+        <button type="button" class="hud-icon-btn" id="btn-help" title="게임 규칙 보기" aria-label="게임 규칙 보기">?</button>
+      </div>
+    </header>
+
+    <!-- Game Canvas & Floating UI -->
+    <main id="arena-wrap">
+      <canvas id="game-canvas"></canvas>
+      <div id="toast-banner" aria-live="polite"></div>
+
+      <!-- Translucent Floating Touch Controls -->
+      <div id="floating-controls">
+        <!-- Bottom-Left Virtual Joystick (360° + Diagonal Movement) -->
+        <div id="joystick-base" aria-label="이동 조이스틱">
+          <div class="joystick-ring"></div>
+          <span class="joy-arrow n">▲</span>
+          <span class="joy-arrow s">▼</span>
+          <span class="joy-arrow w">◀</span>
+          <span class="joy-arrow e">▶</span>
+          <div id="joystick-knob"></div>
+        </div>
+
+        <!-- Bottom-Right Action Buttons -->
+        <div id="action-buttons">
+          <button type="button" class="float-action-btn" id="btn-powerup" aria-label="파워업 퀴즈">
+            <div class="cooldown-overlay" id="powerup-cd-fill"></div>
+            <span class="act-emoji">⚡</span>
+            <span class="act-label" id="powerup-btn-label">파워업 퀴즈</span>
+            <span class="act-key">[E]</span>
+          </button>
+          <button type="button" class="float-action-btn" id="btn-grab" aria-label="알 줍기 또는 훔치기">
+            <span class="act-emoji">🥚</span>
+            <span class="act-label" id="grab-btn-label">줍기 / 훔치기</span>
+            <span class="act-key">[Space]</span>
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Title / Rules Modal -->
+  <div class="modal-backdrop open" id="title-modal">
+    <div class="roblox-card">
+      <div class="card-kicker">
+        <span>영어유치원 2년차 그림 영어 아케이드</span>
+        <span>목표: 먼저 400점 달성! (약 7~8분)</span>
+      </div>
+      <h1 class="card-title">🥚 알 훔치기 영어 대작전!</h1>
+      <p class="card-desc">
+        중앙 둥지와 구석에 있는 알을 줍거나, 3명의 로봇 기지에 몰래 들어가 <strong>황금 알</strong>을 훔쳐 내 기지(파란색 좌측 상단)로 가져와 부화시키세요!
+      </p>
+
+      <div class="rule-grid">
+        <div class="rule-box common">
+          <span class="rule-egg-icon">🥚</span>
+          <div class="rule-egg-name">일반 알</div>
+          <div class="rule-egg-pts">+10점</div>
+          <div class="rule-egg-note">중앙 둥지 · 그림 보고 기초 낱말 고르기</div>
+        </div>
+        <div class="rule-box rare">
+          <span class="rule-egg-icon">💎</span>
+          <div class="rule-egg-name">희귀 알</div>
+          <div class="rule-egg-pts">+20점</div>
+          <div class="rule-egg-note">맵 구석 · 그림 보고 기분·동작·위치 맞히기</div>
+        </div>
+        <div class="rule-box legend">
+          <span class="rule-egg-icon">👑</span>
+          <div class="rule-egg-name">전설의 황금 알</div>
+          <div class="rule-egg-pts">+35점</div>
+          <div class="rule-egg-note">상대 기지 · 그림에 어울리는 영어 문장 고르기</div>
+        </div>
+      </div>
+
+      <div class="controls-summary">
+        <strong>🕹️ 조작 방법 (키보드 & 터치 모두 지원)</strong><br />
+        • <strong>이동:</strong> 키보드 방향키 / WASD 또는 화면 왼쪽 아래 가상 조이스틱 (대각선 이동 가능!)<br />
+        • <strong>알 줍기 · 훔치기:</strong> Space 키 또는 오른쪽 아래 주황색 버튼<br />
+        • <strong>⚡ 파워업 퀴즈:</strong> E 키 또는 보라색 버튼 (5초 그림 퀴즈 맞히면 <strong>스피드 업</strong> 또는 <strong>보호막</strong>!)<br />
+        • <strong>주의:</strong> 문제를 틀리면 6초간 어지러워지고, 봇과 부딪히면 들고 있던 알을 떨어뜨려요!
+      </div>
+
+      <button type="button" class="primary-btn" id="btn-start-game">게임 시작하기!</button>
+    </div>
+  </div>
+
+  <!-- English Quiz Modal -->
+  <div class="modal-backdrop" id="quiz-modal">
+    <div class="roblox-card">
+      <div class="card-kicker">
+        <span id="quiz-badge">일반 알 퀴즈 (+10점)</span>
+        <span id="quiz-category-tag">그림 낱말</span>
+      </div>
+
+      <div class="quiz-timer-wrap" id="quiz-timer-wrap">
+        <div class="quiz-timer-top">
+          <span>⚡ 스피드 퀴즈 제한 시간</span>
+          <span id="quiz-timer-text">5.0초</span>
+        </div>
+        <div class="quiz-timer-track">
+          <div class="quiz-timer-fill" id="quiz-timer-fill"></div>
+        </div>
+      </div>
+
+      <div class="quiz-question-box">
+        <div class="quiz-picture-box" id="quiz-picture-box" aria-label="문제 그림"></div>
+        <div class="quiz-question-en" id="quiz-question-en">그림에 알맞은 영어 낱말은?</div>
+        <div class="quiz-question-sub" id="quiz-question-sub">그림을 보고 알맞은 답을 골라 주세요!</div>
+      </div>
+
+      <div class="quiz-choices" id="quiz-choices"></div>
+      <div class="quiz-feedback" id="quiz-feedback"></div>
+    </div>
+  </div>
+
+  <!-- Game Over / Result & Wrong Answer Review Modal -->
+  <div class="modal-backdrop" id="result-modal">
+    <div class="roblox-card">
+      <div class="card-kicker">
+        <span id="result-kicker">경기 종료!</span>
+        <span id="result-accuracy">정답률 100%</span>
+      </div>
+      <h2 class="card-title" id="result-title">🎉 우승을 축하해요!</h2>
+      <p class="card-desc" id="result-subtitle">파란 팀이 가장 먼저 100점을 달성했어요!</p>
+
+      <div class="ranking-list" id="ranking-list"></div>
+
+      <div class="end-actions">
+        <button type="button" class="secondary-btn" id="btn-toggle-review">📖 오답 노트 복습하기 (0)</button>
+        <button type="button" class="primary-btn" id="btn-play-again">🔄 다시 도전하기</button>
+      </div>
+
+      <div id="review-section">
+        <div class="card-kicker" style="margin-bottom:8px;">
+          <span>틀렸던 영어 문제 복습하기</span>
+          <span style="color:#64748b;">해석을 꼭 읽어보세요!</span>
+        </div>
+        <div class="review-list" id="review-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // =========================================================================
+      // 1. English Kindergarten (Year 2) Picture Quiz Bank & SVG Art (56 Questions)
+      // =========================================================================
+      function renderPictureSVG(picKey) {
+        const scenes = {
+          apple: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="110" cy="122" rx="42" ry="9" fill="#cbd5e1" opacity="0.5"/>
+              <path d="M110 38 C110 22, 120 16, 126 18" stroke="#78350f" stroke-width="6" stroke-linecap="round" fill="none"/>
+              <path d="M112 30 C130 16, 148 22, 142 36 C133 42, 118 38, 112 30 Z" fill="#22c55e" stroke="#15803d" stroke-width="2.5"/>
+              <path d="M110 42 C82 32, 60 54, 66 86 C71 112, 92 122, 108 117 C110 116, 110 116, 112 117 C128 122, 149 112, 154 86 C160 54, 138 32, 110 42 Z" fill="#ef4444" stroke="#991b1b" stroke-width="3.5"/>
+              <ellipse cx="86" cy="64" rx="7" ry="14" transform="rotate(-22 86 64)" fill="#fca5a5" opacity="0.7"/>
+            </svg>`,
+          banana: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="112" cy="118" rx="48" ry="8" fill="#cbd5e1" opacity="0.5"/>
+              <path d="M62 84 C74 114, 138 116, 162 56 C167 42, 164 28, 156 24 C150 22, 149 30, 147 38 C134 78, 92 92, 68 74 C61 70, 58 76, 62 84 Z" fill="#facc15" stroke="#a16207" stroke-width="3.5" stroke-linejoin="round"/>
+              <rect x="154" y="18" width="9" height="10" rx="3" transform="rotate(18 154 18)" fill="#78350f"/>
+              <path d="M84 95 C110 100, 134 86, 146 62" stroke="#fef08a" stroke-width="4" stroke-linecap="round" fill="none"/>
+            </svg>`,
+          strawberry: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="110" cy="122" rx="36" ry="8" fill="#cbd5e1" opacity="0.5"/>
+              <path d="M110 40 C74 40, 64 72, 82 100 C95 119, 125 119, 138 100 C156 72, 146 40, 110 40 Z" fill="#ef4444" stroke="#991b1b" stroke-width="3.5"/>
+              <path d="M82 40 L96 28 L110 38 L124 28 L138 40 L124 48 L110 43 L96 48 Z" fill="#22c55e" stroke="#15803d" stroke-width="2.5" stroke-linejoin="round"/>
+              <circle cx="94" cy="64" r="2.5" fill="#fef08a"/><circle cx="110" cy="60" r="2.5" fill="#fef08a"/><circle cx="126" cy="64" r="2.5" fill="#fef08a"/>
+              <circle cx="88" cy="82" r="2.5" fill="#fef08a"/><circle cx="104" cy="80" r="2.5" fill="#fef08a"/><circle cx="120" cy="80" r="2.5" fill="#fef08a"/><circle cx="132" cy="82" r="2.5" fill="#fef08a"/>
+              <circle cx="100" cy="98" r="2.5" fill="#fef08a"/><circle cx="116" cy="98" r="2.5" fill="#fef08a"/><circle cx="110" cy="108" r="2.5" fill="#fef08a"/>
+            </svg>`,
+          cake: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="110" cy="122" rx="58" ry="10" fill="#cbd5e1" opacity="0.6"/>
+              <rect x="64" y="70" width="92" height="46" rx="10" fill="#fde68a" stroke="#92400e" stroke-width="3"/>
+              <path d="M64 78 Q78 92 92 78 Q108 92 124 78 Q140 92 156 78 L156 70 Q156 64 148 64 L72 64 Q64 64 64 70 Z" fill="#fbcfe8" stroke="#be185d" stroke-width="2.5"/>
+              <rect x="84" y="42" width="8" height="24" rx="2" fill="#60a5fa" stroke="#1e40af" stroke-width="2"/>
+              <rect x="106" y="38" width="8" height="28" rx="2" fill="#f472b6" stroke="#9d174d" stroke-width="2"/>
+              <rect x="128" y="42" width="8" height="24" rx="2" fill="#4ade80" stroke="#166534" stroke-width="2"/>
+              <path d="M88 28 C83 34, 83 41, 88 41 C93 41, 93 34, 88 28 Z" fill="#f97316"/>
+              <path d="M110 24 C105 30, 105 37, 110 37 C115 37, 115 30, 110 24 Z" fill="#f97316"/>
+              <path d="M132 28 C127 34, 127 41, 132 41 C137 41, 137 34, 132 28 Z" fill="#f97316"/>
+            </svg>`,
+          milk: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="110" cy="122" rx="52" ry="8" fill="#cbd5e1" opacity="0.5"/>
+              <polygon points="74,44 108,44 114,58 68,58" fill="#93c5fd" stroke="#1e40af" stroke-width="2.5" stroke-linejoin="round"/>
+              <rect x="80" y="28" width="22" height="16" fill="#60a5fa" stroke="#1e40af" stroke-width="2.5"/>
+              <rect x="68" y="58" width="46" height="60" rx="4" fill="#ffffff" stroke="#1e40af" stroke-width="3"/>
+              <rect x="68" y="76" width="46" height="22" fill="#3b82f6"/>
+              <text x="91" y="91" text-anchor="middle" font-size="11" font-weight="900" fill="#ffffff" font-family="sans-serif">MILK</text>
+              <polygon points="128,70 160,70 154,118 134,118" fill="#e0f2fe" stroke="#0284c7" stroke-width="3" stroke-linejoin="round"/>
+              <polygon points="131,84 157,84 153,116 135,116" fill="#ffffff"/>
+            </svg>`,
+          pizza: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="110" cy="120" rx="48" ry="9" fill="#cbd5e1" opacity="0.5"/>
+              <path d="M110 118 L60 40 Q110 24 160 40 Z" fill="#fde047" stroke="#b45309" stroke-width="3.5" stroke-linejoin="round"/>
+              <path d="M58 42 Q110 20 162 42" stroke="#d97706" stroke-width="12" stroke-linecap="round" fill="none"/>
+              <circle cx="96" cy="60" r="8" fill="#ef4444" stroke="#991b1b" stroke-width="2"/>
+              <circle cx="126" cy="56" r="8" fill="#ef4444" stroke="#991b1b" stroke-width="2"/>
+              <circle cx="110" cy="84" r="8" fill="#ef4444" stroke="#991b1b" stroke-width="2"/>
+            </svg>`,
+          elephant: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="110" cy="122" rx="52" ry="9" fill="#cbd5e1" opacity="0.5"/>
+              <ellipse cx="74" cy="64" rx="22" ry="28" fill="#94a3b8" stroke="#334155" stroke-width="3"/>
+              <ellipse cx="74" cy="66" rx="13" ry="18" fill="#fbcfe8"/>
+              <ellipse cx="146" cy="64" rx="22" ry="28" fill="#94a3b8" stroke="#334155" stroke-width="3"/>
+              <ellipse cx="146" cy="66" rx="13" ry="18" fill="#fbcfe8"/>
+              <rect x="82" y="80" width="56" height="40" rx="14" fill="#94a3b8" stroke="#334155" stroke-width="3"/>
+              <circle cx="110" cy="62" r="28" fill="#cbd5e1" stroke="#334155" stroke-width="3"/>
+              <circle cx="98" cy="56" r="4" fill="#0f172a"/>
+              <circle cx="122" cy="56" r="4" fill="#0f172a"/>
+              <path d="M104 68 Q104 98 124 98 Q132 98 130 88" stroke="#334155" stroke-width="11" stroke-linecap="round" fill="none"/>
+              <path d="M104 68 Q104 98 124 98 Q132 98 130 88" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round" fill="none"/>
+            </svg>`,
+          giraffe: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="110" cy="124" rx="46" ry="8" fill="#cbd5e1" opacity="0.5"/>
+              <rect x="84" y="88" width="10" height="34" rx="4" fill="#facc15" stroke="#92400e" stroke-width="2.5"/>
+              <rect x="122" y="88" width="10" height="34" rx="4" fill="#facc15" stroke="#92400e" stroke-width="2.5"/>
+              <ellipse cx="108" cy="86" rx="30" ry="18" fill="#facc15" stroke="#92400e" stroke-width="3"/>
+              <rect x="114" y="34" width="16" height="54" rx="7" fill="#facc15" stroke="#92400e" stroke-width="3"/>
+              <ellipse cx="124" cy="30" rx="16" ry="12" fill="#fde047" stroke="#92400e" stroke-width="3"/>
+              <line x1="118" y1="18" x2="116" y2="10" stroke="#92400e" stroke-width="3"/><circle cx="116" cy="9" r="3" fill="#92400e"/>
+              <line x1="128" y1="18" x2="130" y2="10" stroke="#92400e" stroke-width="3"/><circle cx="130" cy="9" r="3" fill="#92400e"/>
+              <circle cx="128" cy="28" r="2.5" fill="#0f172a"/>
+              <circle cx="98" cy="84" r="5" fill="#b45309"/><circle cx="112" cy="90" r="4" fill="#b45309"/><circle cx="122" cy="58" r="4" fill="#b45309"/>
+            </svg>`,
+          penguin: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="110" cy="122" rx="52" ry="10" fill="#bae6fd"/>
+              <ellipse cx="110" cy="76" rx="34" ry="42" fill="#1e293b" stroke="#0f172a" stroke-width="3"/>
+              <ellipse cx="110" cy="82" rx="23" ry="31" fill="#ffffff"/>
+              <ellipse cx="75" cy="78" rx="8" ry="20" transform="rotate(18 75 78)" fill="#1e293b"/>
+              <ellipse cx="145" cy="78" rx="8" ry="20" transform="rotate(-18 145 78)" fill="#1e293b"/>
+              <circle cx="98" cy="54" r="4" fill="#0f172a"/>
+              <circle cx="122" cy="54" r="4" fill="#0f172a"/>
+              <polygon points="103,60 117,60 110,70" fill="#f97316" stroke="#c2410c" stroke-width="2" stroke-linejoin="round"/>
+              <ellipse cx="94" cy="118" rx="10" ry="5" fill="#f97316"/>
+              <ellipse cx="126" cy="118" rx="10" ry="5" fill="#f97316"/>
+            </svg>`,
+          octopus: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <path d="M74 84 Q60 114 48 110 M88 90 Q78 122 68 118 M104 94 Q102 124 94 124 M118 94 Q120 124 128 124 M134 90 Q144 122 154 118 M148 84 Q162 114 174 110" stroke="#9333ea" stroke-width="11" stroke-linecap="round" fill="none"/>
+              <circle cx="110" cy="60" r="34" fill="#a855f7" stroke="#6b21a8" stroke-width="3"/>
+              <circle cx="97" cy="58" r="5" fill="#ffffff"/><circle cx="98" cy="58" r="2.5" fill="#0f172a"/>
+              <circle cx="123" cy="58" r="5" fill="#ffffff"/><circle cx="124" cy="58" r="2.5" fill="#0f172a"/>
+              <path d="M102 72 Q110 80 118 72" stroke="#4c1d95" stroke-width="3" stroke-linecap="round" fill="none"/>
+            </svg>`,
+          butterfly: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <path d="M106 66 C76 26, 44 36, 52 70 C58 90, 88 86, 106 74 Z" fill="#f472b6" stroke="#9d174d" stroke-width="3"/>
+              <path d="M114 66 C144 26, 176 36, 168 70 C162 90, 132 86, 114 74 Z" fill="#f472b6" stroke="#9d174d" stroke-width="3"/>
+              <path d="M106 74 C76 80, 62 108, 82 114 C98 118, 106 98, 108 82 Z" fill="#fbbf24" stroke="#b45309" stroke-width="3"/>
+              <path d="M114 74 C144 80, 158 108, 138 114 C122 118, 114 98, 112 82 Z" fill="#fbbf24" stroke="#b45309" stroke-width="3"/>
+              <ellipse cx="110" cy="74" rx="6" ry="26" fill="#334155"/>
+              <path d="M108 48 Q98 30 90 32 M112 48 Q122 30 130 32" stroke="#334155" stroke-width="2.5" fill="none"/>
+              <circle cx="75" cy="58" r="6" fill="#fef08a"/><circle cx="145" cy="58" r="6" fill="#fef08a"/>
+            </svg>`,
+          lion: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="110" cy="70" r="44" fill="#d97706" stroke="#78350f" stroke-width="3" stroke-dasharray="14 6"/>
+              <circle cx="110" cy="70" r="38" fill="#b45309"/>
+              <circle cx="84" cy="44" r="9" fill="#fbbf24" stroke="#78350f" stroke-width="2.5"/>
+              <circle cx="136" cy="44" r="9" fill="#fbbf24" stroke="#78350f" stroke-width="2.5"/>
+              <circle cx="110" cy="72" r="28" fill="#fde047" stroke="#78350f" stroke-width="3"/>
+              <circle cx="99" cy="66" r="4" fill="#0f172a"/><circle cx="121" cy="66" r="4" fill="#0f172a"/>
+              <polygon points="105,74 115,74 110,80" fill="#78350f"/>
+              <path d="M102 85 Q110 92 118 85" stroke="#78350f" stroke-width="3" stroke-linecap="round" fill="none"/>
+            </svg>`,
+          dog: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="110" cy="122" rx="46" ry="8" fill="#cbd5e1" opacity="0.5"/>
+              <ellipse cx="76" cy="62" rx="12" ry="24" transform="rotate(14 76 62)" fill="#92400e" stroke="#451a03" stroke-width="3"/>
+              <ellipse cx="144" cy="62" rx="12" ry="24" transform="rotate(-14 144 62)" fill="#92400e" stroke="#451a03" stroke-width="3"/>
+              <circle cx="110" cy="68" r="32" fill="#d97706" stroke="#451a03" stroke-width="3"/>
+              <ellipse cx="110" cy="78" rx="16" ry="12" fill="#fde68a"/>
+              <circle cx="97" cy="62" r="4.5" fill="#0f172a"/><circle cx="123" cy="62" r="4.5" fill="#0f172a"/>
+              <ellipse cx="110" cy="73" rx="6" ry="4" fill="#0f172a"/>
+              <path d="M106 84 Q110 94 114 84" fill="#ef4444" stroke="#991b1b" stroke-width="2"/>
+            </svg>`,
+          fish: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="148,70 180,44 180,96" fill="#fb923c" stroke="#9a3412" stroke-width="3" stroke-linejoin="round"/>
+              <ellipse cx="106" cy="70" rx="46" ry="28" fill="#f97316" stroke="#9a3412" stroke-width="3"/>
+              <path d="M98 43 Q112 22 126 44" fill="#fb923c" stroke="#9a3412" stroke-width="3"/>
+              <circle cx="82" cy="64" r="6" fill="#ffffff"/><circle cx="80" cy="64" r="3" fill="#0f172a"/>
+              <path d="M68 76 Q76 82 84 78" stroke="#7c2d12" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+              <circle cx="48" cy="48" r="6" fill="#bae6fd" stroke="#0284c7" stroke-width="2"/>
+              <circle cx="38" cy="30" r="4" fill="#bae6fd" stroke="#0284c7" stroke-width="2"/>
+            </svg>`,
+          bus: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="110" cy="118" rx="76" ry="8" fill="#cbd5e1" opacity="0.5"/>
+              <rect x="42" y="42" width="136" height="62" rx="14" fill="#facc15" stroke="#854d0e" stroke-width="3.5"/>
+              <rect x="54" y="54" width="24" height="22" rx="4" fill="#bae6fd" stroke="#0369a1" stroke-width="2"/>
+              <rect x="86" y="54" width="24" height="22" rx="4" fill="#bae6fd" stroke="#0369a1" stroke-width="2"/>
+              <rect x="118" y="54" width="24" height="22" rx="4" fill="#bae6fd" stroke="#0369a1" stroke-width="2"/>
+              <rect x="148" y="54" width="20" height="22" rx="4" fill="#bae6fd" stroke="#0369a1" stroke-width="2"/>
+              <circle cx="72" cy="106" r="14" fill="#1e293b" stroke="#0f172a" stroke-width="3"/><circle cx="72" cy="106" r="6" fill="#cbd5e1"/>
+              <circle cx="148" cy="106" r="14" fill="#1e293b" stroke="#0f172a" stroke-width="3"/><circle cx="148" cy="106" r="6" fill="#cbd5e1"/>
+            </svg>`,
+          airplane: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="52" cy="40" rx="20" ry="10" fill="#ffffff" opacity="0.85"/>
+              <ellipse cx="168" cy="106" rx="22" ry="10" fill="#ffffff" opacity="0.85"/>
+              <polygon points="88,68 124,24 140,24 114,68" fill="#3b82f6" stroke="#1e3a8a" stroke-width="3" stroke-linejoin="round"/>
+              <polygon points="48,68 38,44 54,44 68,68" fill="#ef4444" stroke="#991b1b" stroke-width="2.5" stroke-linejoin="round"/>
+              <path d="M46 68 L154 68 C172 68, 178 76, 172 82 C164 88, 146 88, 126 88 L56 88 C44 88, 42 74, 46 68 Z" fill="#ffffff" stroke="#1e3a8a" stroke-width="3"/>
+              <polygon points="94,82 118,118 134,118 118,82" fill="#3b82f6" stroke="#1e3a8a" stroke-width="3" stroke-linejoin="round"/>
+              <circle cx="92" cy="76" r="4" fill="#93c5fd"/><circle cx="110" cy="76" r="4" fill="#93c5fd"/><circle cx="128" cy="76" r="4" fill="#93c5fd"/>
+            </svg>`,
+          bicycle: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="68" cy="94" r="26" fill="none" stroke="#1e293b" stroke-width="6"/>
+              <circle cx="152" cy="94" r="26" fill="none" stroke="#1e293b" stroke-width="6"/>
+              <circle cx="68" cy="94" r="5" fill="#64748b"/>
+              <circle cx="152" cy="94" r="5" fill="#64748b"/>
+              <path d="M68 94 L102 94 L132 58 L92 58 Z M102 94 L92 48 M152 94 L128 46 L142 44" stroke="#ef4444" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <rect x="80" y="44" width="22" height="7" rx="3" fill="#1e293b"/>
+            </svg>`,
+          blue_car: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="110" cy="118" rx="68" ry="8" fill="#cbd5e1" opacity="0.5"/>
+              <path d="M68 68 L84 40 L142 40 L158 68 Z" fill="#60a5fa" stroke="#1e3a8a" stroke-width="3.5" stroke-linejoin="round"/>
+              <rect x="44" y="68" width="132" height="36" rx="12" fill="#2563eb" stroke="#1e3a8a" stroke-width="3.5"/>
+              <polygon points="88,46 110,46 110,66 74,66" fill="#e0f2fe"/>
+              <polygon points="116,46 138,46 150,66 116,66" fill="#e0f2fe"/>
+              <circle cx="74" cy="106" r="14" fill="#0f172a"/><circle cx="74" cy="106" r="6" fill="#e2e8f0"/>
+              <circle cx="146" cy="106" r="14" fill="#0f172a"/><circle cx="146" cy="106" r="6" fill="#e2e8f0"/>
+            </svg>`,
+          umbrella: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <path d="M110 66 L110 112 C110 122, 96 122, 96 112" stroke="#78350f" stroke-width="5" stroke-linecap="round" fill="none"/>
+              <path d="M52 68 C54 32, 166 32, 168 68 Q149 58 130 68 Q110 58 90 68 Q71 58 52 68 Z" fill="#3b82f6" stroke="#1e3a8a" stroke-width="3.5" stroke-linejoin="round"/>
+              <path d="M90 68 C94 34, 126 34, 130 68 Q110 58 90 68 Z" fill="#facc15" stroke="#1e3a8a" stroke-width="2.5"/>
+              <line x1="110" y1="26" x2="110" y2="36" stroke="#1e3a8a" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="52" cy="30" r="3" fill="#60a5fa"/><circle cx="166" cy="34" r="3" fill="#60a5fa"/>
+            </svg>`,
+          pencil: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <g transform="rotate(-32 110 70)">
+                <rect x="64" y="58" width="84" height="24" fill="#facc15" stroke="#854d0e" stroke-width="3"/>
+                <rect x="48" y="58" width="16" height="24" rx="4" fill="#f472b6" stroke="#9d174d" stroke-width="3"/>
+                <rect x="62" y="58" width="10" height="24" fill="#cbd5e1" stroke="#475569" stroke-width="2"/>
+                <polygon points="148,58 178,70 148,82" fill="#fed7aa" stroke="#854d0e" stroke-width="3" stroke-linejoin="round"/>
+                <polygon points="168,66 178,70 168,74" fill="#1e293b"/>
+              </g>
+            </svg>`,
+          book: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <rect x="44" y="34" width="132" height="78" rx="8" fill="#2563eb" stroke="#1e3a8a" stroke-width="3"/>
+              <path d="M52 30 Q84 24 110 38 Q136 24 168 30 L168 102 Q136 96 110 108 Q84 96 52 102 Z" fill="#ffffff" stroke="#334155" stroke-width="3"/>
+              <line x1="110" y1="38" x2="110" y2="108" stroke="#94a3b8" stroke-width="2.5"/>
+              <line x1="64" y1="52" x2="96" y2="52" stroke="#64748b" stroke-width="3" stroke-linecap="round"/>
+              <line x1="64" y1="66" x2="96" y2="66" stroke="#64748b" stroke-width="3" stroke-linecap="round"/>
+              <line x1="64" y1="80" x2="90" y2="80" stroke="#64748b" stroke-width="3" stroke-linecap="round"/>
+              <rect x="122" y="48" width="34" height="28" rx="4" fill="#fde047" stroke="#ca8a04" stroke-width="2"/>
+            </svg>`,
+          clock: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="110" cy="70" r="46" fill="#ef4444" stroke="#991b1b" stroke-width="3.5"/>
+              <circle cx="110" cy="70" r="37" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+              <circle cx="110" cy="39" r="2.5" fill="#0f172a"/><circle cx="141" cy="70" r="2.5" fill="#0f172a"/>
+              <circle cx="110" cy="101" r="2.5" fill="#0f172a"/><circle cx="79" cy="70" r="2.5" fill="#0f172a"/>
+              <line x1="110" y1="70" x2="110" y2="46" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+              <line x1="110" y1="70" x2="132" y2="70" stroke="#dc2626" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="110" cy="70" r="4" fill="#0f172a"/>
+            </svg>`,
+          hat: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="110" cy="96" rx="68" ry="18" fill="#facc15" stroke="#a16207" stroke-width="3.5"/>
+              <path d="M72 90 C74 44, 146 44, 148 90 Z" fill="#fde047" stroke="#a16207" stroke-width="3.5"/>
+              <path d="M73 78 Q110 88 147 78 L148 88 Q110 98 72 88 Z" fill="#3b82f6" stroke="#1e40af" stroke-width="2"/>
+            </svg>`,
+          rainbow: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <path d="M46 108 A64 64 0 0 1 174 108" stroke="#ef4444" stroke-width="10" fill="none"/>
+              <path d="M56 108 A54 54 0 0 1 164 108" stroke="#f97316" stroke-width="10" fill="none"/>
+              <path d="M66 108 A44 44 0 0 1 154 108" stroke="#facc15" stroke-width="10" fill="none"/>
+              <path d="M76 108 A34 34 0 0 1 144 108" stroke="#22c55e" stroke-width="10" fill="none"/>
+              <path d="M86 108 A24 24 0 0 1 134 108" stroke="#3b82f6" stroke-width="10" fill="none"/>
+              <circle cx="48" cy="108" r="16" fill="#ffffff"/><circle cx="64" cy="104" r="14" fill="#ffffff"/>
+              <circle cx="172" cy="108" r="16" fill="#ffffff"/><circle cx="156" cy="104" r="14" fill="#ffffff"/>
+            </svg>`,
+          sun: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <g stroke="#f59e0b" stroke-width="6" stroke-linecap="round">
+                <line x1="110" y1="16" x2="110" y2="28"/><line x1="110" y1="112" x2="110" y2="124"/>
+                <line x1="56" y1="70" x2="68" y2="70"/><line x1="152" y1="70" x2="164" y2="70"/>
+                <line x1="72" y1="32" x2="80" y2="40"/><line x1="140" y1="100" x2="148" y2="108"/>
+                <line x1="148" y1="32" x2="140" y2="40"/><line x1="80" y1="100" x2="72" y2="108"/>
+              </g>
+              <circle cx="110" cy="70" r="32" fill="#facc15" stroke="#d97706" stroke-width="3.5"/>
+              <circle cx="99" cy="65" r="3.5" fill="#78350f"/><circle cx="121" cy="65" r="3.5" fill="#78350f"/>
+              <path d="M101 77 Q110 85 119 77" stroke="#78350f" stroke-width="3" stroke-linecap="round" fill="none"/>
+            </svg>`,
+          sunny: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="14" width="180" height="112" rx="16" fill="#bae6fd"/>
+              <rect x="20" y="96" width="180" height="30" rx="12" fill="#86efac"/>
+              <g stroke="#f59e0b" stroke-width="5" stroke-linecap="round">
+                <line x1="110" y1="22" x2="110" y2="30"/><line x1="110" y1="90" x2="110" y2="98"/>
+                <line x1="72" y1="60" x2="80" y2="60"/><line x1="140" y1="60" x2="148" y2="60"/>
+                <line x1="83" y1="33" x2="89" y2="39"/><line x1="131" y1="81" x2="137" y2="87"/>
+                <line x1="137" y1="33" x2="131" y2="39"/><line x1="89" y1="81" x2="83" y2="87"/>
+              </g>
+              <circle cx="110" cy="60" r="24" fill="#facc15" stroke="#d97706" stroke-width="3"/>
+              <circle cx="102" cy="56" r="3" fill="#78350f"/><circle cx="118" cy="56" r="3" fill="#78350f"/>
+              <path d="M103 66 Q110 72 117 66" stroke="#78350f" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            </svg>`,
+          rainy: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="14" width="180" height="112" rx="16" fill="#cbd5e1"/>
+              <path d="M74 66 C60 66, 56 46, 72 44 C76 26, 108 22, 118 38 C132 30, 152 40, 148 54 C160 56, 158 66, 144 66 Z" fill="#64748b" stroke="#334155" stroke-width="3"/>
+              <g stroke="#2563eb" stroke-width="4" stroke-linecap="round">
+                <line x1="78" y1="78" x2="72" y2="94"/><line x1="100" y1="82" x2="94" y2="98"/>
+                <line x1="122" y1="78" x2="116" y2="94"/><line x1="142" y1="82" x2="136" y2="98"/>
+                <line x1="88" y1="104" x2="82" y2="118"/><line x1="128" y1="104" x2="122" y2="118"/>
+              </g>
+            </svg>`,
+          snowy: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="14" width="180" height="112" rx="16" fill="#dbeafe"/>
+              <circle cx="110" cy="94" r="24" fill="#ffffff" stroke="#64748b" stroke-width="3"/>
+              <circle cx="110" cy="58" r="17" fill="#ffffff" stroke="#64748b" stroke-width="3"/>
+              <circle cx="104" cy="54" r="2.5" fill="#0f172a"/><circle cx="116" cy="54" r="2.5" fill="#0f172a"/>
+              <polygon points="110,58 122,61 110,64" fill="#f97316"/>
+              <rect x="94" y="72" width="32" height="7" rx="3" fill="#ef4444"/>
+              <circle cx="54" cy="40" r="4" fill="#ffffff"/><circle cx="164" cy="44" r="4" fill="#ffffff"/>
+              <circle cx="66" cy="84" r="4" fill="#ffffff"/><circle cx="156" cy="90" r="4" fill="#ffffff"/>
+              <circle cx="48" cy="108" r="3" fill="#ffffff"/><circle cx="174" cy="68" r="3" fill="#ffffff"/>
+            </svg>`,
+          moon: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="14" width="180" height="112" rx="16" fill="#1e293b"/>
+              <path d="M126 32 C94 34, 78 68, 96 96 C108 112, 134 114, 148 98 C122 102, 106 84, 110 60 C112 46, 120 38, 126 32 Z" fill="#fde047" stroke="#ca8a04" stroke-width="2.5"/>
+              <circle cx="62" cy="44" r="3" fill="#fef08a"/><circle cx="164" cy="42" r="3.5" fill="#fef08a"/><circle cx="168" cy="88" r="2.5" fill="#fef08a"/>
+            </svg>`,
+          moon_night: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="14" width="180" height="112" rx="16" fill="#0f172a"/>
+              <path d="M120 28 C88 30, 74 64, 92 92 C104 108, 130 110, 144 94 C118 98, 102 80, 106 56 C108 42, 114 34, 120 28 Z" fill="#facc15"/>
+              <polygon points="62,38 65,45 72,45 66,50 68,57 62,53 56,57 58,50 52,45 59,45" fill="#fef08a"/>
+              <polygon points="164,52 166,57 172,57 167,61 169,66 164,63 159,66 161,61 156,57 162,57" fill="#fef08a"/>
+              <circle cx="152" cy="30" r="2.5" fill="#ffffff"/><circle cx="52" cy="90" r="2.5" fill="#ffffff"/>
+            </svg>`,
+          tree: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="110" cy="122" rx="46" ry="8" fill="#cbd5e1" opacity="0.5"/>
+              <rect x="98" y="80" width="24" height="42" rx="4" fill="#92400e" stroke="#451a03" stroke-width="3"/>
+              <circle cx="110" cy="52" r="30" fill="#22c55e" stroke="#15803d" stroke-width="3"/>
+              <circle cx="84" cy="68" r="22" fill="#22c55e" stroke="#15803d" stroke-width="3"/>
+              <circle cx="136" cy="68" r="22" fill="#22c55e" stroke="#15803d" stroke-width="3"/>
+              <circle cx="110" cy="64" r="24" fill="#4ade80"/>
+            </svg>`,
+          happy: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="110" cy="70" r="46" fill="#fde047" stroke="#ca8a04" stroke-width="4"/>
+              <circle cx="82" cy="78" r="7" fill="#fda4af"/><circle cx="138" cy="78" r="7" fill="#fda4af"/>
+              <path d="M88 58 Q94 50 100 58" stroke="#0f172a" stroke-width="4" stroke-linecap="round" fill="none"/>
+              <path d="M120 58 Q126 50 132 58" stroke="#0f172a" stroke-width="4" stroke-linecap="round" fill="none"/>
+              <path d="M88 80 Q110 102 132 80 Z" fill="#ef4444" stroke="#7f1d1d" stroke-width="3" stroke-linejoin="round"/>
+            </svg>`,
+          sad: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="110" cy="70" r="46" fill="#93c5fd" stroke="#1d4ed8" stroke-width="4"/>
+              <circle cx="94" cy="60" r="4.5" fill="#0f172a"/><circle cx="126" cy="60" r="4.5" fill="#0f172a"/>
+              <path d="M92 92 Q110 76 128 92" stroke="#0f172a" stroke-width="4" stroke-linecap="round" fill="none"/>
+              <path d="M84 72 C79 80, 79 88, 84 88 C89 88, 89 80, 84 72 Z" fill="#2563eb"/>
+              <path d="M136 72 C131 80, 131 88, 136 88 C141 88, 141 80, 136 72 Z" fill="#2563eb"/>
+            </svg>`,
+          angry: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="110" cy="70" r="46" fill="#fca5a5" stroke="#b91c1c" stroke-width="4"/>
+              <line x1="84" y1="48" x2="102" y2="56" stroke="#7f1d1d" stroke-width="4.5" stroke-linecap="round"/>
+              <line x1="136" y1="48" x2="118" y2="56" stroke="#7f1d1d" stroke-width="4.5" stroke-linecap="round"/>
+              <circle cx="94" cy="64" r="4.5" fill="#0f172a"/><circle cx="126" cy="64" r="4.5" fill="#0f172a"/>
+              <path d="M92 92 Q110 80 128 92" stroke="#7f1d1d" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+            </svg>`,
+          sleepy: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="104" cy="74" r="44" fill="#ddd6fe" stroke="#6d28d9" stroke-width="4"/>
+              <path d="M84 68 Q91 74 98 68" stroke="#1e293b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+              <path d="M112 68 Q119 74 126 68" stroke="#1e293b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+              <ellipse cx="104" cy="90" rx="7" ry="9" fill="#be185d"/>
+              <text x="150" y="44" font-size="22" font-weight="900" fill="#6d28d9" font-family="sans-serif">Z</text>
+              <text x="166" y="30" font-size="16" font-weight="900" fill="#7c3aed" font-family="sans-serif">z</text>
+            </svg>`,
+          cat_on_box: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <rect x="74" y="76" width="72" height="46" rx="4" fill="#d97706" stroke="#78350f" stroke-width="3"/>
+              <line x1="74" y1="90" x2="146" y2="90" stroke="#92400e" stroke-width="2.5"/>
+              <polygon points="88,42 94,24 104,36" fill="#fb923c" stroke="#9a3412" stroke-width="2.5"/>
+              <polygon points="132,42 126,24 116,36" fill="#fb923c" stroke="#9a3412" stroke-width="2.5"/>
+              <ellipse cx="110" cy="64" rx="20" ry="14" fill="#fb923c" stroke="#9a3412" stroke-width="3"/>
+              <circle cx="110" cy="46" r="18" fill="#fdba74" stroke="#9a3412" stroke-width="3"/>
+              <circle cx="103" cy="44" r="2.8" fill="#0f172a"/><circle cx="117" cy="44" r="2.8" fill="#0f172a"/>
+              <polygon points="107,50 113,50 110,54" fill="#ef4444"/>
+              <path d="M130 68 Q152 64 148 48" stroke="#9a3412" stroke-width="5" stroke-linecap="round" fill="none"/>
+            </svg>`,
+          cat_in_box: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <rect x="72" y="64" width="76" height="54" rx="4" fill="#92400e" stroke="#451a03" stroke-width="3"/>
+              <polygon points="88,48 94,28 104,42" fill="#fb923c" stroke="#9a3412" stroke-width="2.5"/>
+              <polygon points="132,48 126,28 116,42" fill="#fb923c" stroke="#9a3412" stroke-width="2.5"/>
+              <circle cx="110" cy="54" r="20" fill="#fdba74" stroke="#9a3412" stroke-width="3"/>
+              <circle cx="102" cy="50" r="3" fill="#0f172a"/><circle cx="118" cy="50" r="3" fill="#0f172a"/>
+              <polygon points="107,56 113,56 110,60" fill="#ef4444"/>
+              <rect x="72" y="68" width="76" height="50" rx="4" fill="#d97706" stroke="#78350f" stroke-width="3"/>
+              <polygon points="72,68 58,82 72,82" fill="#b45309" stroke="#78350f" stroke-width="2"/>
+              <polygon points="148,68 162,82 148,82" fill="#b45309" stroke="#78350f" stroke-width="2"/>
+            </svg>`,
+          ball_under_table: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <rect x="46" y="42" width="128" height="14" rx="5" fill="#b45309" stroke="#78350f" stroke-width="3"/>
+              <rect x="58" y="56" width="12" height="62" rx="3" fill="#92400e" stroke="#451a03" stroke-width="2.5"/>
+              <rect x="150" y="56" width="12" height="62" rx="3" fill="#92400e" stroke="#451a03" stroke-width="2.5"/>
+              <circle cx="110" cy="100" r="18" fill="#ffffff" stroke="#1e293b" stroke-width="3"/>
+              <polygon points="110,91 118,97 115,107 105,107 102,97" fill="#1e293b"/>
+            </svg>`,
+          swim: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="78" width="180" height="48" rx="12" fill="#60a5fa"/>
+              <ellipse cx="112" cy="78" rx="32" ry="18" fill="#facc15" stroke="#a16207" stroke-width="3"/>
+              <circle cx="88" cy="52" r="18" fill="#fde047" stroke="#a16207" stroke-width="3"/>
+              <circle cx="82" cy="48" r="3" fill="#0f172a"/>
+              <polygon points="71,52 56,56 71,60" fill="#f97316" stroke="#c2410c" stroke-width="2"/>
+              <path d="M36 90 Q54 80 72 90 T108 90 T144 90 T180 90" stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round"/>
+            </svg>`,
+          jump: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="110" cy="118" rx="36" ry="8" fill="#86efac"/>
+              <path d="M74 106 Q110 86 146 106" stroke="#22c55e" stroke-width="3" stroke-dasharray="5 5" fill="none"/>
+              <circle cx="96" cy="36" r="10" fill="#4ade80" stroke="#15803d" stroke-width="3"/><circle cx="96" cy="35" r="4" fill="#0f172a"/>
+              <circle cx="124" cy="36" r="10" fill="#4ade80" stroke="#15803d" stroke-width="3"/><circle cx="124" cy="35" r="4" fill="#0f172a"/>
+              <ellipse cx="110" cy="58" rx="28" ry="20" fill="#4ade80" stroke="#15803d" stroke-width="3"/>
+              <path d="M98 64 Q110 72 122 64" stroke="#14532d" stroke-width="3" stroke-linecap="round" fill="none"/>
+              <path d="M84 68 L68 88 L82 92 M136 68 L152 88 L138 92" stroke="#15803d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>`,
+          read: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="110" cy="48" r="24" fill="#fed7aa" stroke="#9a3412" stroke-width="3"/>
+              <path d="M86 44 C88 22, 132 22, 134 44 C122 34, 98 34, 86 44 Z" fill="#451a03"/>
+              <circle cx="101" cy="50" r="3" fill="#0f172a"/><circle cx="119" cy="50" r="3" fill="#0f172a"/>
+              <path d="M104 60 Q110 64 116 60" stroke="#9a3412" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+              <path d="M68 74 L110 86 L152 74 L152 118 L110 128 L68 118 Z" fill="#3b82f6" stroke="#1e3a8a" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M74 76 L110 87 L146 76 L146 112 L110 122 L74 112 Z" fill="#ffffff"/>
+              <line x1="110" y1="87" x2="110" y2="122" stroke="#94a3b8" stroke-width="2.5"/>
+            </svg>`,
+          three_stars: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="14" width="180" height="112" rx="16" fill="#1e293b"/>
+              <polygon points="58,42 64,58 81,58 67,68 72,84 58,74 44,84 49,68 35,58 52,58" fill="#facc15" stroke="#ca8a04" stroke-width="2"/>
+              <polygon points="110,34 117,52 136,52 121,63 126,81 110,70 94,81 99,63 84,52 103,52" fill="#facc15" stroke="#ca8a04" stroke-width="2"/>
+              <polygon points="162,42 168,58 185,58 171,68 176,84 162,74 148,84 153,68 139,58 156,58" fill="#facc15" stroke="#ca8a04" stroke-width="2"/>
+            </svg>`,
+          five_apples: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              ${[44, 77, 110, 143, 176].map(cx => `
+                <path d="M${cx} 54 L${cx} 44" stroke="#78350f" stroke-width="3" stroke-linecap="round"/>
+                <ellipse cx="${cx + 5}" cy="47" rx="5" ry="3" fill="#22c55e"/>
+                <circle cx="${cx}" cy="70" r="14" fill="#ef4444" stroke="#991b1b" stroke-width="2.5"/>
+              `).join('')}
+            </svg>`,
+          big_vs_small: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="78" cy="74" rx="42" ry="34" fill="#94a3b8" stroke="#334155" stroke-width="3"/>
+              <circle cx="104" cy="56" r="22" fill="#cbd5e1" stroke="#334155" stroke-width="3"/>
+              <path d="M120 62 Q132 82 122 92" stroke="#334155" stroke-width="8" stroke-linecap="round" fill="none"/>
+              <circle cx="108" cy="52" r="3" fill="#0f172a"/>
+              <rect x="52" y="96" width="12" height="22" rx="4" fill="#94a3b8" stroke="#334155" stroke-width="2.5"/>
+              <rect x="86" y="96" width="12" height="22" rx="4" fill="#94a3b8" stroke="#334155" stroke-width="2.5"/>
+              <ellipse cx="174" cy="108" rx="12" ry="9" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
+              <circle cx="164" cy="99" r="5" fill="#fbcfe8" stroke="#475569" stroke-width="2"/>
+              <circle cx="172" cy="106" r="2" fill="#0f172a"/>
+              <polygon points="78,18 68,30 88,30" fill="#ef4444"/>
+            </svg>`,
+          hot_fire: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <path d="M110 20 C134 48, 152 68, 146 94 C140 118, 80 118, 74 94 C68 68, 86 48, 110 20 Z" fill="#ef4444" stroke="#991b1b" stroke-width="3"/>
+              <path d="M110 48 C126 66, 134 80, 130 96 C126 110, 94 110, 90 96 C86 80, 94 66, 110 48 Z" fill="#facc15"/>
+              <rect x="74" y="114" width="72" height="10" rx="5" fill="#78350f"/>
+            </svg>`,
+          frog_green: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="110" cy="108" rx="58" ry="16" fill="#4ade80" stroke="#16a34a" stroke-width="3"/>
+              <circle cx="94" cy="48" r="11" fill="#22c55e" stroke="#14532d" stroke-width="3"/><circle cx="94" cy="47" r="4" fill="#0f172a"/>
+              <circle cx="126" cy="48" r="11" fill="#22c55e" stroke="#14532d" stroke-width="3"/><circle cx="126" cy="47" r="4" fill="#0f172a"/>
+              <ellipse cx="110" cy="78" rx="32" ry="24" fill="#22c55e" stroke="#14532d" stroke-width="3"/>
+              <ellipse cx="110" cy="86" rx="20" ry="12" fill="#bbf7d0"/>
+              <path d="M96 72 Q110 82 124 72" stroke="#14532d" stroke-width="3" stroke-linecap="round" fill="none"/>
+            </svg>`,
+          bear_sleep: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <rect x="38" y="88" width="144" height="32" rx="12" fill="#93c5fd" stroke="#1e40af" stroke-width="3"/>
+              <ellipse cx="70" cy="84" rx="18" ry="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+              <circle cx="72" cy="74" r="20" fill="#a16207" stroke="#451a03" stroke-width="3"/>
+              <circle cx="58" cy="60" r="7" fill="#a16207" stroke="#451a03" stroke-width="2.5"/>
+              <circle cx="84" cy="60" r="7" fill="#a16207" stroke="#451a03" stroke-width="2.5"/>
+              <path d="M64 74 Q69 78 74 74" stroke="#0f172a" stroke-width="2.5" fill="none"/>
+              <ellipse cx="118" cy="84" rx="34" ry="18" fill="#3b82f6" stroke="#1e3a8a" stroke-width="3"/>
+              <text x="150" y="46" font-size="20" font-weight="900" fill="#4f46e5" font-family="sans-serif">Zzz</text>
+            </svg>`,
+          rabbit_run: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="52" cy="108" rx="14" ry="8" fill="#e2e8f0"/><ellipse cx="70" cy="112" rx="10" ry="6" fill="#e2e8f0"/>
+              <ellipse cx="108" cy="82" rx="28" ry="18" fill="#ffffff" stroke="#475569" stroke-width="3"/>
+              <circle cx="136" cy="62" r="16" fill="#ffffff" stroke="#475569" stroke-width="3"/>
+              <ellipse cx="128" cy="36" rx="6" ry="18" transform="rotate(-14 128 36)" fill="#ffffff" stroke="#475569" stroke-width="2.5"/>
+              <ellipse cx="138" cy="36" rx="6" ry="18" transform="rotate(6 138 36)" fill="#ffffff" stroke="#475569" stroke-width="2.5"/>
+              <circle cx="142" cy="60" r="3" fill="#0f172a"/><circle cx="151" cy="64" r="3" fill="#f472b6"/>
+              <circle cx="78" cy="78" r="8" fill="#ffffff" stroke="#475569" stroke-width="2.5"/>
+              <line x1="92" y1="98" x2="78" y2="112" stroke="#475569" stroke-width="5" stroke-linecap="round"/>
+              <line x1="124" y1="96" x2="144" y2="108" stroke="#475569" stroke-width="5" stroke-linecap="round"/>
+            </svg>`,
+          kite: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="118,20 154,54 118,96 82,54" fill="#ef4444" stroke="#991b1b" stroke-width="3" stroke-linejoin="round"/>
+              <polygon points="118,20 154,54 118,54" fill="#facc15"/>
+              <polygon points="118,54 82,54 118,96" fill="#3b82f6"/>
+              <line x1="118" y1="20" x2="118" y2="96" stroke="#1e293b" stroke-width="2.5"/>
+              <line x1="82" y1="54" x2="154" y2="54" stroke="#1e293b" stroke-width="2.5"/>
+              <path d="M118 96 Q104 112 122 122 Q136 130 116 136" stroke="#475569" stroke-width="3" fill="none"/>
+              <polygon points="104,108 114,114 104,118" fill="#22c55e"/>
+            </svg>`,
+          flower_bee: `
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <line x1="110" y1="84" x2="110" y2="126" stroke="#16a34a" stroke-width="6" stroke-linecap="round"/>
+              <ellipse cx="94" cy="108" rx="14" ry="7" transform="rotate(-24 94 108)" fill="#22c55e"/>
+              <circle cx="110" cy="52" r="14" fill="#f472b6"/><circle cx="130" cy="66" r="14" fill="#f472b6"/>
+              <circle cx="122" cy="88" r="14" fill="#f472b6"/><circle cx="98" cy="88" r="14" fill="#f472b6"/>
+              <circle cx="90" cy="66" r="14" fill="#f472b6"/>
+              <circle cx="110" cy="70" r="15" fill="#fde047" stroke="#ca8a04" stroke-width="2.5"/>
+              <ellipse cx="136" cy="40" rx="10" ry="6" fill="#e0f2fe" stroke="#64748b" stroke-width="2"/>
+              <ellipse cx="144" cy="48" rx="14" ry="9" fill="#facc15" stroke="#0f172a" stroke-width="2.5"/>
+              <line x1="140" y1="40" x2="140" y2="56" stroke="#0f172a" stroke-width="3"/>
+              <line x1="148" y1="40" x2="148" y2="56" stroke="#0f172a" stroke-width="3"/>
+            </svg>`
+        };
+        return scenes[picKey] || scenes.apple;
+      }
+
+      const QUESTION_BANK = {
+        common: [
+          {
+            id: 'c1',
+            pic: 'apple',
+            topic: '과일 낱말',
+            en: '그림에 알맞은 영어 낱말은?',
+            hint: '아삭하고 달콤한 빨간 과일이에요.',
+            choices: ['apple', 'banana', 'grape', 'orange'],
+            answer: 0,
+            kr: 'apple = 사과'
+          },
+          {
+            id: 'c2',
+            pic: 'elephant',
+            topic: '동물 낱말',
+            en: '그림에 알맞은 영어 낱말은?',
+            hint: '코가 길고 귀가 커다란 동물이에요.',
+            choices: ['monkey', 'elephant', 'tiger', 'rabbit'],
+            answer: 1,
+            kr: 'elephant = 코끼리'
+          },
+          {
+            id: 'c3',
+            pic: 'bus',
+            topic: '탈것 낱말',
+            en: '그림에 알맞은 영어 낱말은?',
+            hint: '친구들과 함께 타고 가는 노란 차예요.',
+            choices: ['train', 'boat', 'bus', 'bike'],
+            answer: 2,
+            kr: 'bus = 버스'
+          },
+          {
+            id: 'c4',
+            pic: 'umbrella',
+            topic: '물건 낱말',
+            en: '그림에 알맞은 영어 낱말은?',
+            hint: '비 오는 날 비를 막아 주는 물건이에요.',
+            choices: ['umbrella', 'hat', 'shoes', 'gloves'],
+            answer: 0,
+            kr: 'umbrella = 우산'
+          },
+          {
+            id: 'c5',
+            pic: 'cake',
+            topic: '음식 낱말',
+            en: '그림에 알맞은 영어 낱말은?',
+            hint: '생일 파티에 촛불을 꽂고 축하해요.',
+            choices: ['bread', 'pizza', 'cake', 'cheese'],
+            answer: 2,
+            kr: 'cake = 케이크'
+          },
+          {
+            id: 'c6',
+            pic: 'penguin',
+            topic: '동물 낱말',
+            en: '그림에 알맞은 영어 낱말은?',
+            hint: '추운 남극에서 뒤뚱뒤뚱 걸어요.',
+            choices: ['penguin', 'duck', 'owl', 'chicken'],
+            answer: 0,
+            kr: 'penguin = 펭귄'
+          },
+          {
+            id: 'c7',
+            pic: 'pencil',
+            topic: '학용품 낱말',
+            en: '그림에 알맞은 영어 낱말은?',
+            hint: '글씨를 쓰거나 그림을 그릴 때 써요.',
+            choices: ['eraser', 'ruler', 'pencil', 'scissors'],
+            answer: 2,
+            kr: 'pencil = 연필'
+          },
+          {
+            id: 'c8',
+            pic: 'rainbow',
+            topic: '자연 낱말',
+            en: '그림에 알맞은 영어 낱말은?',
+            hint: '비 온 뒤 하늘에 뜨는 알록달록한 다리예요.',
+            choices: ['rainbow', 'cloud', 'mountain', 'ocean'],
+            answer: 0,
+            kr: 'rainbow = 무지개'
+          },
+          {
+            id: 'c9',
+            pic: 'butterfly',
+            topic: '곤충 낱말',
+            en: '그림에 알맞은 영어 낱말은?',
+            hint: '예쁜 날개로 꽃밭을 팔랑팔랑 날아다녀요.',
+            choices: ['bee', 'spider', 'ant', 'butterfly'],
+            answer: 3,
+            kr: 'butterfly = 나비'
+          },
+          {
+            id: 'c10',
+            pic: 'giraffe',
+            topic: '동물 낱말',
+            en: '그림에 알맞은 영어 낱말은?',
+            hint: '목이 아주 길어서 높은 나뭇잎도 먹어요.',
+            choices: ['zebra', 'giraffe', 'hippo', 'bear'],
+            answer: 1,
+            kr: 'giraffe = 기린'
+          },
+          {
+            id: 'c11',
+            pic: 'milk',
+            topic: '음료 낱말',
+            en: '그림에 알맞은 영어 낱말은?',
+            hint: '하얗고 고소한 맛! 키가 쑥쑥 자라요.',
+            choices: ['juice', 'water', 'milk', 'tea'],
+            answer: 2,
+            kr: 'milk = 우유'
+          },
+          {
+            id: 'c12',
+            pic: 'clock',
+            topic: '물건 낱말',
+            en: '그림에 알맞은 영어 낱말은?',
+            hint: '지금 몇 시인지 알려 주는 물건이에요.',
+            choices: ['clock', 'book', 'chair', 'lamp'],
+            answer: 0,
+            kr: 'clock = 시계'
+          },
+          {
+            id: 'c13',
+            pic: 'strawberry',
+            topic: '과일 낱말',
+            en: '그림에 알맞은 영어 낱말은?',
+            hint: '초록 꼭지가 달린 빨갛고 새콤달콤한 과일!',
+            choices: ['watermelon', 'strawberry', 'lemon', 'cherry'],
+            answer: 1,
+            kr: 'strawberry = 딸기'
+          },
+          {
+            id: 'c14',
+            pic: 'octopus',
+            topic: '바다 동물',
+            en: '그림에 알맞은 영어 낱말은?',
+            hint: '바다에 살며 다리가 여덟 개예요.',
+            choices: ['whale', 'crab', 'shark', 'octopus'],
+            answer: 3,
+            kr: 'octopus = 문어'
+          }
+        ],
+        rare: [
+          {
+            id: 'r1',
+            pic: 'happy',
+            topic: '기분 낱말',
+            en: '그림 속 친구의 기분에 알맞은 말은?',
+            hint: '활짝 웃고 있어요! 기분이 어떨까요?',
+            choices: ['happy', 'sad', 'angry', 'scared'],
+            answer: 0,
+            kr: 'happy = 행복한, 기쁜'
+          },
+          {
+            id: 'r2',
+            pic: 'sleepy',
+            topic: '기분 낱말',
+            en: '그림 속 친구의 모습에 알맞은 말은?',
+            hint: '눈이 스르르 감기고 하품이 나와요.',
+            choices: ['hungry', 'sleepy', 'excited', 'thirsty'],
+            answer: 1,
+            kr: 'sleepy = 졸린'
+          },
+          {
+            id: 'r3',
+            pic: 'angry',
+            topic: '기분 낱말',
+            en: '그림 속 친구의 표정에 알맞은 말은?',
+            hint: '얼굴이 빨개지고 화가 났어요.',
+            choices: ['happy', 'shy', 'angry', 'bored'],
+            answer: 2,
+            kr: 'angry = 화가 난'
+          },
+          {
+            id: 'r4',
+            pic: 'sad',
+            topic: '기분 낱말',
+            en: '그림 속 친구의 기분에 알맞은 말은?',
+            hint: '눈물을 뚝뚝 흘리며 슬퍼해요.',
+            choices: ['sad', 'funny', 'proud', 'brave'],
+            answer: 0,
+            kr: 'sad = 슬픈'
+          },
+          {
+            id: 'r5',
+            pic: 'cat_on_box',
+            topic: '위치 말하기',
+            en: '그림을 보고 빈칸을 채우세요: The cat is ___ the box.',
+            hint: '고양이가 상자 "위"에 올라가 있어요.',
+            choices: ['in', 'on', 'under', 'behind'],
+            answer: 1,
+            kr: 'on = ~ 위에 (고양이가 상자 위에 있어요.)'
+          },
+          {
+            id: 'r6',
+            pic: 'cat_in_box',
+            topic: '위치 말하기',
+            en: '그림을 보고 빈칸을 채우세요: The cat is ___ the box.',
+            hint: '고양이가 상자 "안"에 쏙 들어가 있어요.',
+            choices: ['in', 'on', 'under', 'near'],
+            answer: 0,
+            kr: 'in = ~ 안에 (고양이가 상자 안에 있어요.)'
+          },
+          {
+            id: 'r7',
+            pic: 'ball_under_table',
+            topic: '위치 말하기',
+            en: '그림을 보고 빈칸을 채우세요: The ball is ___ the table.',
+            hint: '축구공이 책상 "아래"에 굴러가 있어요.',
+            choices: ['on', 'in', 'under', 'above'],
+            answer: 2,
+            kr: 'under = ~ 아래에 (공이 책상 아래에 있어요.)'
+          },
+          {
+            id: 'r8',
+            pic: 'swim',
+            topic: '동작 낱말',
+            en: '그림 속 오리가 하고 있는 동작은?',
+            hint: '물 위에서 첨벙첨벙 헤엄치고 있어요.',
+            choices: ['run', 'swim', 'fly', 'sleep'],
+            answer: 1,
+            kr: 'swim = 수영하다'
+          },
+          {
+            id: 'r9',
+            pic: 'jump',
+            topic: '동작 낱말',
+            en: '그림 속 개구리가 하고 있는 동작은?',
+            hint: '폴짝! 높이 뛰어오르고 있어요.',
+            choices: ['sit', 'jump', 'eat', 'cry'],
+            answer: 1,
+            kr: 'jump = 점프하다, 뛰다'
+          },
+          {
+            id: 'r10',
+            pic: 'read',
+            topic: '동작 낱말',
+            en: '그림 속 친구가 하고 있는 동작은?',
+            hint: '재미있는 그림책을 펼쳐서 보고 있어요.',
+            choices: ['sing', 'dance', 'read', 'cook'],
+            answer: 2,
+            kr: 'read = 읽다'
+          },
+          {
+            id: 'r11',
+            pic: 'three_stars',
+            topic: '숫자 세기',
+            en: '그림에 있는 별은 모두 몇 개일까요?',
+            hint: '하나, 둘, 셋! 영어로 세어 보세요.',
+            choices: ['two stars', 'three stars', 'four stars', 'five stars'],
+            answer: 1,
+            kr: 'three stars = 별 3개'
+          },
+          {
+            id: 'r12',
+            pic: 'five_apples',
+            topic: '숫자 세기',
+            en: '그림에 있는 사과는 모두 몇 개일까요?',
+            hint: 'One, two, three, four, ___!',
+            choices: ['three apples', 'four apples', 'five apples', 'six apples'],
+            answer: 2,
+            kr: 'five apples = 사과 5개'
+          },
+          {
+            id: 'r13',
+            pic: 'big_vs_small',
+            topic: '크기 말하기',
+            en: '화살표가 가리키는 코끼리의 모습은? The elephant is ___.',
+            hint: '생쥐보다 몸집이 아주 커요!',
+            choices: ['big', 'small', 'short', 'thin'],
+            answer: 0,
+            kr: 'big = 큰 (코끼리는 크다!)'
+          },
+          {
+            id: 'r14',
+            pic: 'hot_fire',
+            topic: '느낌 말하기',
+            en: '그림 속 모닥불의 느낌에 알맞은 말은?',
+            hint: '불 가까이에 가면 아주 뜨거워요!',
+            choices: ['cold', 'hot', 'wet', 'dark'],
+            answer: 1,
+            kr: 'hot = 뜨거운'
+          }
+        ],
+        legendary: [
+          {
+            id: 'l1',
+            pic: 'sunny',
+            topic: '날씨 문장',
+            en: '그림에 알맞은 영어 문장은?',
+            hint: '하늘에 햇님이 반짝반짝 빛나고 있어요.',
+            choices: ['It is rainy.', 'It is snowy.', 'It is sunny.', 'It is windy.'],
+            answer: 2,
+            kr: 'It is sunny. = 날씨가 맑아요.'
+          },
+          {
+            id: 'l2',
+            pic: 'rainy',
+            topic: '날씨 문장',
+            en: '그림에 알맞은 영어 문장은?',
+            hint: '먹구름에서 빗방울이 주룩주룩 내려요.',
+            choices: ['It is sunny.', 'It is rainy.', 'It is hot.', 'It is dry.'],
+            answer: 1,
+            kr: 'It is rainy. = 비가 와요.'
+          },
+          {
+            id: 'l3',
+            pic: 'snowy',
+            topic: '날씨 문장',
+            en: '그림에 알맞은 영어 문장은?',
+            hint: '하얀 눈이 펑펑 내리고 눈사람도 있어요.',
+            choices: ['It is snowy.', 'It is sunny.', 'It is rainy.', 'It is cloudy.'],
+            answer: 0,
+            kr: 'It is snowy. = 눈이 와요.'
+          },
+          {
+            id: 'l4',
+            pic: 'apple',
+            topic: '색깔 문장',
+            en: '그림에 알맞은 영어 문장은?',
+            hint: '무슨 색깔의 무슨 과일인지 찾아보세요!',
+            choices: ['It is a blue banana.', 'It is a red apple.', 'It is a green grape.', 'It is a yellow lemon.'],
+            answer: 1,
+            kr: 'It is a red apple. = 이것은 빨간 사과예요.'
+          },
+          {
+            id: 'l5',
+            pic: 'blue_car',
+            topic: '색깔 문장',
+            en: '그림에 알맞은 영어 문장은?',
+            hint: '파란색 자동차가 보여요!',
+            choices: ['I see a red bus.', 'I see a green bike.', 'I see a blue car.', 'I see a yellow boat.'],
+            answer: 2,
+            kr: 'I see a blue car. = 파란 자동차가 보여요.'
+          },
+          {
+            id: 'l6',
+            pic: 'cat_on_box',
+            topic: '위치 문장',
+            en: '그림에 알맞은 영어 문장은?',
+            hint: '고양이가 상자 "위"에 있어요.',
+            choices: ['The cat is in the box.', 'The cat is on the box.', 'The cat is under the box.', 'The dog is on the bed.'],
+            answer: 1,
+            kr: 'The cat is on the box. = 고양이가 상자 위에 있어요.'
+          },
+          {
+            id: 'l7',
+            pic: 'cat_in_box',
+            topic: '위치 문장',
+            en: '그림에 알맞은 영어 문장은?',
+            hint: '고양이가 상자 "안"에 들어 있어요.',
+            choices: ['The cat is in the box.', 'The cat is on the box.', 'The dog is under the box.', 'The bird is in the tree.'],
+            answer: 0,
+            kr: 'The cat is in the box. = 고양이가 상자 안에 있어요.'
+          },
+          {
+            id: 'l8',
+            pic: 'swim',
+            topic: '동물 문장',
+            en: '그림에 알맞은 영어 문장은?',
+            hint: '오리가 물에서 헤엄칠 수 있어요!',
+            choices: ['The duck can climb.', 'The duck can swim.', 'The cat can fly.', 'The fish can walk.'],
+            answer: 1,
+            kr: 'The duck can swim. = 오리는 수영할 수 있어요.'
+          },
+          {
+            id: 'l9',
+            pic: 'frog_green',
+            topic: '색깔 문장',
+            en: '그림에 알맞은 영어 문장은?',
+            hint: '연잎 위의 개구리는 무슨 색일까요?',
+            choices: ['The frog is purple.', 'The frog is pink.', 'The frog is green.', 'The frog is brown.'],
+            answer: 2,
+            kr: 'The frog is green. = 개구리는 초록색이에요.'
+          },
+          {
+            id: 'l10',
+            pic: 'bear_sleep',
+            topic: '행동 문장',
+            en: '그림에 알맞은 영어 문장은?',
+            hint: '곰이 이불을 덮고 Zzz 잠을 자고 있어요.',
+            choices: ['The bear is running.', 'The bear is eating.', 'The bear is sleeping.', 'The bear is jumping.'],
+            answer: 2,
+            kr: 'The bear is sleeping. = 곰이 자고 있어요.'
+          },
+          {
+            id: 'l11',
+            pic: 'rabbit_run',
+            topic: '행동 문장',
+            en: '그림에 알맞은 영어 문장은?',
+            hint: '하얀 토끼가 빠르게 달리고 있어요!',
+            choices: ['The rabbit can run fast.', 'The turtle can fly high.', 'The rabbit is sleeping.', 'The bear is swimming.'],
+            answer: 0,
+            kr: 'The rabbit can run fast. = 토끼는 빠르게 달릴 수 있어요.'
+          },
+          {
+            id: 'l12',
+            pic: 'moon_night',
+            topic: '밤하늘 문장',
+            en: '그림에 알맞은 영어 문장은?',
+            hint: '깜깜한 밤하늘에 노란 달님이 떴어요.',
+            choices: ['I see the sun at night.', 'I see the moon at night.', 'I see a rainbow now.', 'It is a sunny morning.'],
+            answer: 1,
+            kr: 'I see the moon at night. = 밤에 달이 보여요.'
+          },
+          {
+            id: 'l13',
+            pic: 'kite',
+            topic: '놀이 문장',
+            en: '그림에 알맞은 영어 문장은?',
+            hint: '하늘 높이 날아가는 알록달록한 연이에요!',
+            choices: ['Look at my kite!', 'Look at my shoes!', 'Open the door!', 'Sit on the chair!'],
+            answer: 0,
+            kr: 'Look at my kite! = 내 연을 좀 봐!'
+          },
+          {
+            id: 'l14',
+            pic: 'flower_bee',
+            topic: '자연 문장',
+            en: '그림에 알맞은 영어 문장은?',
+            hint: '분홍색 꽃 위에 작은 꿀벌 한 마리가 있어요.',
+            choices: ['A fish is in the pond.', 'A cat is under the bed.', 'A bee is on the flower.', 'A bird is in the cage.'],
+            answer: 2,
+            kr: 'A bee is on the flower. = 꿀벌이 꽃 위에 있어요.'
+          }
+        ],
+        powerup: [
+          {
+            id: 'p1',
+            pic: 'banana',
+            topic: '스피드 그림 낱말',
+            en: '그림에 알맞은 낱말은?',
+            hint: '노랗고 길쭉한 달콤한 과일!',
+            choices: ['apple', 'banana', 'grape', 'melon'],
+            answer: 1,
+            kr: 'banana = 바나나'
+          },
+          {
+            id: 'p2',
+            pic: 'lion',
+            topic: '스피드 그림 낱말',
+            en: '그림에 알맞은 낱말은?',
+            hint: '동물의 왕 어흥!',
+            choices: ['tiger', 'lion', 'bear', 'fox'],
+            answer: 1,
+            kr: 'lion = 사자'
+          },
+          {
+            id: 'p3',
+            pic: 'airplane',
+            topic: '스피드 그림 낱말',
+            en: '그림에 알맞은 낱말은?',
+            hint: '하늘을 슝 날아가는 탈것!',
+            choices: ['train', 'ship', 'airplane', 'truck'],
+            answer: 2,
+            kr: 'airplane = 비행기'
+          },
+          {
+            id: 'p4',
+            pic: 'bicycle',
+            topic: '스피드 그림 낱말',
+            en: '그림에 알맞은 낱말은?',
+            hint: '두 바퀴로 페달을 밟아 달려요!',
+            choices: ['bus', 'bicycle', 'car', 'boat'],
+            answer: 1,
+            kr: 'bicycle = 자전거'
+          },
+          {
+            id: 'p5',
+            pic: 'book',
+            topic: '스피드 그림 낱말',
+            en: '그림에 알맞은 낱말은?',
+            hint: '재미있는 이야기가 들어 있어요.',
+            choices: ['bag', 'desk', 'book', 'pen'],
+            answer: 2,
+            kr: 'book = 책'
+          },
+          {
+            id: 'p6',
+            pic: 'hat',
+            topic: '스피드 그림 낱말',
+            en: '그림에 알맞은 낱말은?',
+            hint: '햇빛을 가릴 때 머리에 써요.',
+            choices: ['hat', 'coat', 'sock', 'bag'],
+            answer: 0,
+            kr: 'hat = 모자'
+          },
+          {
+            id: 'p7',
+            pic: 'pizza',
+            topic: '스피드 그림 낱말',
+            en: '그림에 알맞은 낱말은?',
+            hint: '치즈가 쭉쭉 늘어나는 세모 모양 음식!',
+            choices: ['cake', 'pizza', 'rice', 'soup'],
+            answer: 1,
+            kr: 'pizza = 피자'
+          },
+          {
+            id: 'p8',
+            pic: 'dog',
+            topic: '스피드 그림 낱말',
+            en: '그림에 알맞은 낱말은?',
+            hint: '멍멍! 반갑게 꼬리를 흔드는 친구!',
+            choices: ['cat', 'dog', 'pig', 'cow'],
+            answer: 1,
+            kr: 'dog = 강아지(개)'
+          },
+          {
+            id: 'p9',
+            pic: 'fish',
+            topic: '스피드 그림 낱말',
+            en: '그림에 알맞은 낱말은?',
+            hint: '물속에서 뻐끔뻐끔 헤엄쳐요.',
+            choices: ['bird', 'frog', 'fish', 'duck'],
+            answer: 2,
+            kr: 'fish = 물고기'
+          },
+          {
+            id: 'p10',
+            pic: 'sun',
+            topic: '스피드 그림 낱말',
+            en: '그림에 알맞은 낱말은?',
+            hint: '낮에 하늘을 환하게 비춰 주는 해!',
+            choices: ['moon', 'star', 'sun', 'snow'],
+            answer: 2,
+            kr: 'sun = 해(태양)'
+          },
+          {
+            id: 'p11',
+            pic: 'moon',
+            topic: '스피드 그림 낱말',
+            en: '그림에 알맞은 낱말은?',
+            hint: '밤하늘에 뜨는 노란 초승달!',
+            choices: ['sun', 'moon', 'rain', 'tree'],
+            answer: 1,
+            kr: 'moon = 달'
+          },
+          {
+            id: 'p12',
+            pic: 'tree',
+            topic: '스피드 그림 낱말',
+            en: '그림에 알맞은 낱말은?',
+            hint: '초록 잎이 풍성한 나무!',
+            choices: ['flower', 'grass', 'tree', 'rock'],
+            answer: 2,
+            kr: 'tree = 나무'
+          },
+          {
+            id: 'p13',
+            pic: 'ball_under_table',
+            topic: '스피드 그림 위치',
+            en: '공이 책상 어디에 있나요? The ball is ___ the table.',
+            hint: '책상 아래를 보세요!',
+            choices: ['on', 'in', 'under', 'next to'],
+            answer: 2,
+            kr: 'under = ~ 아래에'
+          },
+          {
+            id: 'p14',
+            pic: 'happy',
+            topic: '스피드 그림 문장',
+            en: '그림에 알맞은 문장은?',
+            hint: '활짝 웃고 있어요!',
+            choices: ['I am happy!', 'I am sad.', 'I am angry.', 'I am sleepy.'],
+            answer: 0,
+            kr: 'I am happy! = 나는 행복해요!'
+          }
+        ]
+      };
+
+      // =========================================================================
+      // 2. Web Audio API Synthesizer (No External Sound Files)
+      // =========================================================================
+      const SFX = {
+        ctx: null,
+        muted: false,
+        ensureCtx() {
+          if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) this.ctx = new AudioCtx();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+          }
+          return this.ctx;
+        },
+        playTone(freq, duration, type = 'sine', vol = 0.14, delay = 0) {
+          if (this.muted) return;
+          const ctx = this.ensureCtx();
+          if (!ctx) return;
+          const now = ctx.currentTime + delay;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.exponentialRampToValueAtTime(vol, now + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + duration + 0.02);
+        },
+        pickup() {
+          this.playTone(523.25, 0.1, 'triangle', 0.15, 0);
+          this.playTone(659.25, 0.14, 'triangle', 0.15, 0.07);
+        },
+        hatch(points) {
+          const base = points >= 50 ? 659.25 : points >= 25 ? 587.33 : 523.25;
+          this.playTone(base, 0.11, 'triangle', 0.16, 0);
+          this.playTone(base * 1.25, 0.11, 'triangle', 0.16, 0.08);
+          this.playTone(base * 1.5, 0.22, 'triangle', 0.18, 0.16);
+        },
+        quizOpen() {
+          this.playTone(440, 0.08, 'sine', 0.1, 0);
+          this.playTone(554.37, 0.1, 'sine', 0.1, 0.06);
+        },
+        correct() {
+          this.playTone(587.33, 0.1, 'sine', 0.16, 0);
+          this.playTone(783.99, 0.12, 'sine', 0.16, 0.08);
+          this.playTone(1046.5, 0.22, 'triangle', 0.16, 0.16);
+        },
+        wrong() {
+          this.playTone(260, 0.16, 'sawtooth', 0.1, 0);
+          this.playTone(185, 0.26, 'sawtooth', 0.1, 0.12);
+        },
+        powerup() {
+          this.playTone(440, 0.08, 'square', 0.08, 0);
+          this.playTone(660, 0.08, 'square', 0.08, 0.06);
+          this.playTone(880, 0.1, 'square', 0.09, 0.12);
+          this.playTone(1174.66, 0.2, 'triangle', 0.13, 0.18);
+        },
+        drop() {
+          this.playTone(240, 0.1, 'triangle', 0.14, 0);
+          this.playTone(160, 0.15, 'triangle', 0.14, 0.07);
+        },
+        winFanfare() {
+          const notes = [
+            [523.25, 0.14, 0],
+            [659.25, 0.14, 0.12],
+            [783.99, 0.14, 0.24],
+            [1046.5, 0.35, 0.36],
+            [783.99, 0.12, 0.56],
+            [1046.5, 0.45, 0.68]
+          ];
+          for (const [f, d, t] of notes) {
+            this.playTone(f, d, 'triangle', 0.18, t);
+          }
+        },
+        loseChime() {
+          this.playTone(392, 0.18, 'triangle', 0.14, 0);
+          this.playTone(349.23, 0.18, 'triangle', 0.14, 0.16);
+          this.playTone(329.63, 0.34, 'triangle', 0.14, 0.32);
+        }
+      };
+
+      // =========================================================================
+      // 3. Game Constants & Arena Geometry
+      // =========================================================================
+      const WORLD_W = 1200;
+      const WORLD_H = 760;
+      const WIN_SCORE = 400;
+      const PLAYER_BASE_SPEED = 152;
+      const BOT_BASE_SPEED = 108;
+      const CARRY_SPEED_MULT = 0.82;
+      const SPEED_BOOST_MULT = 1.55;
+      const POWERUP_COOLDOWN = 12.0; // seconds
+      const POWERUP_DURATION = 5.0;  // seconds
+      const STUN_DURATION = 6.0;     // seconds
+
+      const TEAMS = [
+        { id: 0, name: '나(파랑)', color: '#2563eb', light: '#93c5fd', dark: '#1e3a8a', baseX: 36, baseY: 36, nestX: 126, nestY: 116, lockX: 175, lockY: 160, isPlayer: true },
+        { id: 1, name: '빨강봇', color: '#dc2626', light: '#fca5a5', dark: '#7f1d1d', baseX: 984, baseY: 36, nestX: 1074, nestY: 116, lockX: 1025, lockY: 158, isPlayer: false },
+        { id: 2, name: '초록봇', color: '#16a34a', light: '#86efac', dark: '#14532d', baseX: 36, baseY: 564, nestX: 126, nestY: 644, lockX: 175, lockY: 602, isPlayer: false },
+        { id: 3, name: '노랑봇', color: '#d97706', light: '#fde047', dark: '#78350f', baseX: 984, baseY: 564, nestX: 1074, nestY: 644, lockX: 1025, lockY: 602, isPlayer: false }
+      ];
+      const BASE_W = 180;
+      const BASE_H = 160;
+
+      // Symmetrical blocky Roblox obstacles
+      const OBSTACLES = [
+        // Inner-corner wooden crates / stone blocks
+        { x: 310, y: 175, w: 72, h: 52, color: '#a16207', top: '#ca8a04', kind: 'crate' },
+        { x: 818, y: 175, w: 72, h: 52, color: '#a16207', top: '#ca8a04', kind: 'crate' },
+        { x: 310, y: 533, w: 72, h: 52, color: '#a16207', top: '#ca8a04', kind: 'crate' },
+        { x: 818, y: 533, w: 72, h: 52, color: '#a16207', top: '#ca8a04', kind: 'crate' },
+        // Mid-arena bushes / hedges
+        { x: 430, y: 348, w: 46, h: 64, color: '#15803d', top: '#22c55e', kind: 'bush' },
+        { x: 724, y: 348, w: 46, h: 64, color: '#15803d', top: '#22c55e', kind: 'bush' },
+        { x: 568, y: 205, w: 64, h: 42, color: '#475569', top: '#64748b', kind: 'stone' },
+        { x: 568, y: 513, w: 64, h: 42, color: '#475569', top: '#64748b', kind: 'stone' }
+      ];
+
+      // Rare egg spawn spots in outer edges/corners
+      const RARE_SPOTS = [
+        { x: 600, y: 76 },
+        { x: 600, y: 684 },
+        { x: 96, y: 380 },
+        { x: 1104, y: 380 }
+      ];
+
+      const EGG_TIERS = {
+        common:    { label: '일반 알', pts: 10,  body: '#fffbeb', stripe: '#f59e0b', outline: '#b45309', radius: 15 },
+        rare:      { label: '희귀 알', pts: 20,  body: '#e0f2fe', stripe: '#0284c7', outline: '#0369a1', radius: 17 },
+        legendary: { label: '황금 알', pts: 35,  body: '#fef08a', stripe: '#f59e0b', outline: '#b45309', radius: 19 }
+      };
+
+      // =========================================================================
+      // 4. DOM Elements
+      // =========================================================================
+      const canvas = document.getElementById('game-canvas');
+      const ctx = canvas.getContext('2d');
+      const arenaWrap = document.getElementById('arena-wrap');
+      const toastBanner = document.getElementById('toast-banner');
+
+      const titleModal = document.getElementById('title-modal');
+      const quizModal = document.getElementById('quiz-modal');
+      const resultModal = document.getElementById('result-modal');
+
+      const carryIndicator = document.getElementById('carry-indicator');
+      const buffIndicator = document.getElementById('buff-indicator');
+      const hudTimerEl = document.getElementById('hud-timer');
+      const btnSound = document.getElementById('btn-sound');
+      const btnHelp = document.getElementById('btn-help');
+      const btnStartGame = document.getElementById('btn-start-game');
+      const btnGrab = document.getElementById('btn-grab');
+      const grabBtnLabel = document.getElementById('grab-btn-label');
+      const btnPowerup = document.getElementById('btn-powerup');
+      const powerupBtnLabel = document.getElementById('powerup-btn-label');
+      const powerupCdFill = document.getElementById('powerup-cd-fill');
+
+      const quizBadge = document.getElementById('quiz-badge');
+      const quizCategoryTag = document.getElementById('quiz-category-tag');
+      const quizTimerWrap = document.getElementById('quiz-timer-wrap');
+      const quizTimerText = document.getElementById('quiz-timer-text');
+      const quizTimerFill = document.getElementById('quiz-timer-fill');
+      const quizPictureBox = document.getElementById('quiz-picture-box');
+      const quizQuestionEn = document.getElementById('quiz-question-en');
+      const quizQuestionSub = document.getElementById('quiz-question-sub');
+      const quizChoicesEl = document.getElementById('quiz-choices');
+      const quizFeedbackEl = document.getElementById('quiz-feedback');
+
+      const resultKicker = document.getElementById('result-kicker');
+      const resultAccuracy = document.getElementById('result-accuracy');
+      const resultTitle = document.getElementById('result-title');
+      const resultSubtitle = document.getElementById('result-subtitle');
+      const rankingList = document.getElementById('ranking-list');
+      const btnToggleReview = document.getElementById('btn-toggle-review');
+      const btnPlayAgain = document.getElementById('btn-play-again');
+      const reviewSection = document.getElementById('review-section');
+      const reviewList = document.getElementById('review-list');
+
+      // =========================================================================
+      // 5. Game State
+      // =========================================================================
+      let state = {
+        phase: 'TITLE', // 'TITLE' | 'PLAYING' | 'QUIZ' | 'ENDED'
+        time: 0,
+        realElapsed: 0,
+        actors: [],
+        eggs: [], // loose eggs on field
+        baseLockboxes: [], // stealable golden eggs in bot bases
+        particles: [],
+        popups: [],
+        nextEggId: 1,
+        commonSpawnTimer: 0,
+        rareSpawnTimer: 0,
+        powerupCooldown: 0,
+        wrongAnswers: [],
+        totalQuizzes: 0,
+        correctQuizzes: 0,
+        usedQuestions: { common: [], rare: [], legendary: [], powerup: [] },
+        activeQuiz: null,
+        toastTimer: 0,
+        camera: { x: WORLD_W / 2, y: WORLD_H / 2, scale: 1 }
+      };
+
+      // Input state (Keyboard + 360° Analog Virtual Joystick)
+      const keys = { up: false, down: false, left: false, right: false };
+      const joystickVec = { x: 0, y: 0, active: false };
+
+      function showToast(msg, duration = 2.4) {
+        toastBanner.textContent = msg;
+        toastBanner.classList.add('show');
+        state.toastTimer = duration;
+      }
+
+      // =========================================================================
+      // 6. Initialization & Reset
+      // =========================================================================
+      function createActors() {
+        return TEAMS.map((t, idx) => ({
+          id: idx,
+          name: t.name,
+          color: t.color,
+          light: t.light,
+          dark: t.dark,
+          isPlayer: t.isPlayer,
+          x: t.nestX + (idx % 2 === 0 ? 45 : -45),
+          y: t.nestY + (idx < 2 ? 35 : -35),
+          vx: 0,
+          vy: 0,
+          radius: 20,
+          facing: idx % 2 === 0 ? 0 : Math.PI,
+          walkPhase: 0,
+          score: 0,
+          hatchedCount: 0,
+          carrying: null, // { tier, pts, fromBaseId }
+          stunTimer: 0,
+          shieldTimer: 0,
+          speedTimer: 0,
+          pickupCooldown: 0,
+          // AI-specific state
+          aiMode: 'SEEK', // 'SEEK' | 'RETURN' | 'CHASE' | 'RAID'
+          aiTargetActorId: null,
+          aiWaitTimer: 0,
+          aiPendingTarget: null,
+          aiDecisionTimer: 0.2 + idx * 0.15,
+          aiWanderAngle: Math.random() * Math.PI * 2
+        }));
+      }
+
+      function spawnCommonEgg() {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 25 + Math.random() * 82;
+        state.eggs.push({
+          id: state.nextEggId++,
+          tier: 'common',
+          x: WORLD_W / 2 + Math.cos(angle) * dist,
+          y: WORLD_H / 2 + Math.sin(angle) * dist,
+          bobOffset: Math.random() * Math.PI * 2,
+          dropped: false,
+          fromBaseId: null
+        });
+      }
+
+      function spawnRareEgg() {
+        // Pick an unoccupied rare spot
+        const freeSpots = RARE_SPOTS.filter(sp =>
+          !state.eggs.some(e => e.tier === 'rare' && Math.hypot(e.x - sp.x, e.y - sp.y) < 35)
+        );
+        if (freeSpots.length === 0) return;
+        const spot = freeSpots[Math.floor(Math.random() * freeSpots.length)];
+        state.eggs.push({
+          id: state.nextEggId++,
+          tier: 'rare',
+          x: spot.x,
+          y: spot.y,
+          bobOffset: Math.random() * Math.PI * 2,
+          dropped: false,
+          fromBaseId: null
+        });
+      }
+
+      function createBaseLockboxes() {
+        // Bots 1, 2, 3 each guard a Golden Egg (35 pts) in their base
+        return TEAMS.filter(t => !t.isPlayer).map(t => ({
+          baseId: t.id,
+          x: t.lockX,
+          y: t.lockY,
+          available: true,
+          respawnTimer: 0
+        }));
+      }
+
+      function resetGame() {
+        state.phase = 'PLAYING';
+        state.time = 0;
+        state.realElapsed = 0;
+        state.actors = createActors();
+        state.eggs = [];
+        state.baseLockboxes = createBaseLockboxes();
+        state.particles = [];
+        state.popups = [];
+        state.commonSpawnTimer = 0;
+        state.rareSpawnTimer = 0;
+        state.powerupCooldown = 0;
+        state.wrongAnswers = [];
+        state.totalQuizzes = 0;
+        state.correctQuizzes = 0;
+        state.activeQuiz = null;
+        state.toastTimer = 0;
+        toastBanner.classList.remove('show');
+
+        for (let i = 0; i < 4; i++) spawnCommonEgg();
+        for (let i = 0; i < 2; i++) spawnRareEgg();
+
+        updateHUD();
+        showToast('경기 시작! 중앙 알을 줍거나 상대 기지의 황금 알을 훔쳐 400점을 모으세요!', 3.2);
+      }
+
+      // =========================================================================
+      // 7. Particles & Floating Popups
+      // =========================================================================
+      function spawnBurst(x, y, color, count = 14) {
+        for (let i = 0; i < count; i++) {
+          const a = (Math.PI * 2 * i) / count + Math.random() * 0.4;
+          const spd = 60 + Math.random() * 140;
+          state.particles.push({
+            x, y,
+            vx: Math.cos(a) * spd,
+            vy: Math.sin(a) * spd,
+            life: 0.45 + Math.random() * 0.3,
+            maxLife: 0.75,
+            size: 4 + Math.random() * 5,
+            color
+          });
+        }
+      }
+
+      function addPopup(x, y, text, color = '#ffffff') {
+        state.popups.push({ x, y, text, color, life: 1.2, maxLife: 1.2 });
+      }
+
+      // =========================================================================
+      // 8. Physics & Collision Helpers
+      // =========================================================================
+      function resolveObstaclesAndBounds(actor) {
+        const pad = 26 + actor.radius;
+        actor.x = Math.max(pad, Math.min(WORLD_W - pad, actor.x));
+        actor.y = Math.max(pad, Math.min(WORLD_H - pad, actor.y));
+
+        for (const obs of OBSTACLES) {
+          const closestX = Math.max(obs.x, Math.min(actor.x, obs.x + obs.w));
+          const closestY = Math.max(obs.y, Math.min(actor.y, obs.y + obs.h));
+          const dx = actor.x - closestX;
+          const dy = actor.y - closestY;
+          const distSq = dx * dx + dy * dy;
+          if (distSq < actor.radius * actor.radius) {
+            const dist = Math.sqrt(distSq) || 0.001;
+            const overlap = actor.radius - dist;
+            actor.x += (dx / dist) * overlap;
+            actor.y += (dy / dist) * overlap;
+          }
+        }
+      }
+
+      // =========================================================================
+      // 9. Quiz Engine
+      // =========================================================================
+      function pickQuestion(tier) {
+        const pool = QUESTION_BANK[tier];
+        let used = state.usedQuestions[tier];
+        if (used.length >= pool.length) {
+          used = [];
+          state.usedQuestions[tier] = used;
+        }
+        const available = pool.filter(q => !used.includes(q.id));
+        const chosen = available[Math.floor(Math.random() * available.length)];
+        used.push(chosen.id);
+        return chosen;
+      }
+
+      function openQuizModal(config) {
+        // config: { tier, badgeText, onSuccess, onFail }
+        const q = pickQuestion(config.tier);
+        const isSpeedQuiz = config.tier === 'powerup';
+
+        state.phase = 'QUIZ';
+        // Clear movement keys & joystick so player doesn't keep sliding after modal
+        keys.up = keys.down = keys.left = keys.right = false;
+        joystickPointerId = null;
+        joystickVec.x = 0;
+        joystickVec.y = 0;
+        joystickVec.active = false;
+        updateJoystickVisual();
+
+        SFX.quizOpen();
+
+        quizBadge.textContent = config.badgeText;
+        quizCategoryTag.textContent = q.topic;
+        quizPictureBox.innerHTML = renderPictureSVG(q.pic);
+        quizQuestionEn.textContent = q.en;
+        quizQuestionSub.textContent = q.hint ? `💡 힌트: ${q.hint}` : '그림을 보고 알맞은 답을 골라 주세요!';
+        quizFeedbackEl.textContent = '';
+        quizFeedbackEl.className = 'quiz-feedback';
+
+        if (isSpeedQuiz) {
+          quizTimerWrap.classList.add('active');
+          quizTimerText.textContent = '5.0초';
+          quizTimerFill.style.width = '100%';
+        } else {
+          quizTimerWrap.classList.remove('active');
+        }
+
+        quizChoicesEl.innerHTML = '';
+        q.choices.forEach((choiceText, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'choice-btn';
+          btn.innerHTML = `<span class="choice-num">${idx + 1}</span><span>${choiceText}</span>`;
+          btn.addEventListener('click', () => handleQuizAnswer(idx));
+          quizChoicesEl.appendChild(btn);
+        });
+
+        state.activeQuiz = {
+          question: q,
+          tier: config.tier,
+          isSpeedQuiz,
+          timeLeft: isSpeedQuiz ? 5.0 : Infinity,
+          resolved: false,
+          onSuccess: config.onSuccess,
+          onFail: config.onFail
+        };
+
+        quizModal.classList.add('open');
+      }
+
+      function handleQuizAnswer(choiceIdx) {
+        const aq = state.activeQuiz;
+        if (!aq || aq.resolved) return;
+        aq.resolved = true;
+        state.totalQuizzes++;
+
+        const buttons = quizChoicesEl.querySelectorAll('.choice-btn');
+        buttons.forEach(b => (b.disabled = true));
+
+        const isCorrect = choiceIdx === aq.question.answer;
+
+        if (isCorrect) {
+          state.correctQuizzes++;
+          if (buttons[choiceIdx]) buttons[choiceIdx].classList.add('correct');
+          quizFeedbackEl.textContent = `정답이에요! 🎉 (${aq.question.kr})`;
+          quizFeedbackEl.className = 'quiz-feedback ok';
+          SFX.correct();
+
+          setTimeout(() => {
+            quizModal.classList.remove('open');
+            state.activeQuiz = null;
+            if (state.phase === 'QUIZ') state.phase = 'PLAYING';
+            aq.onSuccess();
+          }, 680);
+        } else {
+          if (choiceIdx >= 0 && buttons[choiceIdx]) buttons[choiceIdx].classList.add('wrong');
+          if (buttons[aq.question.answer]) buttons[aq.question.answer].classList.add('correct');
+
+          const pickedText = choiceIdx >= 0 ? aq.question.choices[choiceIdx] : '시간 초과';
+          quizFeedbackEl.textContent = `아쉬워요! 정답은 "${aq.question.choices[aq.question.answer]}" · 6초간 어지러워져요 😵`;
+          quizFeedbackEl.className = 'quiz-feedback err';
+          SFX.wrong();
+
+          state.wrongAnswers.push({
+            pic: aq.question.pic,
+            topic: aq.question.topic,
+            en: aq.question.en,
+            picked: pickedText,
+            correct: aq.question.choices[aq.question.answer],
+            kr: aq.question.kr
+          });
+
+          setTimeout(() => {
+            quizModal.classList.remove('open');
+            state.activeQuiz = null;
+            if (state.phase === 'QUIZ') state.phase = 'PLAYING';
+            aq.onFail();
+          }, 1150);
+        }
+      }
+
+      // =========================================================================
+      // 10. Player Actions (Grab / Steal / Power-Up)
+      // =========================================================================
+      function findPlayerInteractTarget() {
+        const player = state.actors[0];
+        if (!player || player.stunTimer > 0 || player.carrying) return null;
+
+        // 1. Check nearby loose egg
+        let bestEgg = null;
+        let bestDist = 66;
+        for (const egg of state.eggs) {
+          const d = Math.hypot(egg.x - player.x, egg.y - player.y);
+          if (d < bestDist) {
+            bestDist = d;
+            bestEgg = egg;
+          }
+        }
+        if (bestEgg) return { type: 'egg', egg: bestEgg };
+
+        // 2. Check nearby enemy base golden lockbox
+        for (const box of state.baseLockboxes) {
+          if (!box.available) continue;
+          const d = Math.hypot(box.x - player.x, box.y - player.y);
+          if (d < 74) {
+            return { type: 'lockbox', box };
+          }
+        }
+        return null;
+      }
+
+      function triggerGrabAction() {
+        if (state.phase !== 'PLAYING') return;
+        const player = state.actors[0];
+        if (player.stunTimer > 0) {
+          showToast('😵 어지러워서 잠시 움직일 수 없어요!', 1.2);
+          return;
+        }
+        if (player.carrying) {
+          const myBase = TEAMS[0];
+          showToast('이미 알을 들고 있어요! 파란 기지 둥지로 가져가세요!', 1.8);
+          addPopup(player.x, player.y - 30, '내 기지로!', '#93c5fd');
+          return;
+        }
+
+        const target = findPlayerInteractTarget();
+        if (!target) {
+          showToast('가까이 있는 알이나 상대 기지 황금 알 앞에서 눌러보세요!', 1.6);
+          return;
+        }
+
+        if (target.type === 'egg') {
+          const egg = target.egg;
+          // If it's a dropped egg from earlier, require quiz too (or same tier quiz)
+          const tierInfo = EGG_TIERS[egg.tier];
+          openQuizModal({
+            tier: egg.tier,
+            badgeText: `${tierInfo.label} 퀴즈 (+${tierInfo.pts}점)`,
+            onSuccess: () => {
+              // Remove egg if still present on field
+              const idx = state.eggs.findIndex(e => e.id === egg.id);
+              if (idx !== -1) state.eggs.splice(idx, 1);
+              player.carrying = {
+                tier: egg.tier,
+                pts: tierInfo.pts,
+                fromBaseId: egg.fromBaseId
+              };
+              SFX.pickup();
+              spawnBurst(player.x, player.y, tierInfo.stripe, 14);
+              addPopup(player.x, player.y - 28, `${tierInfo.label} 획득!`, '#fef08a');
+              showToast(`${tierInfo.label}을 들었어요! 파란 기지로 가져가 부화시키세요!`, 2.4);
+              updateHUD();
+            },
+            onFail: () => {
+              applyPlayerStun();
+            }
+          });
+        } else if (target.type === 'lockbox') {
+          const box = target.box;
+          const ownerBot = state.actors[box.baseId];
+          openQuizModal({
+            tier: 'legendary',
+            badgeText: `🔒 ${ownerBot.name} 자물쇠 해제 퀴즈 (+35점)`,
+            onSuccess: () => {
+              if (!box.available) {
+                showToast('앗, 방금 다른 친구가 먼저 훔쳐갔어요!', 2.0);
+                return;
+              }
+              box.available = false;
+              box.respawnTimer = 26.0;
+              player.carrying = {
+                tier: 'legendary',
+                pts: 35,
+                fromBaseId: box.baseId
+              };
+              SFX.pickup();
+              spawnBurst(box.x, box.y, '#fbbf24', 22);
+              addPopup(player.x, player.y - 30, '황금 알 훔치기 성공!', '#fde047');
+              showToast(`🚨 ${ownerBot.name}의 황금 알을 훔쳤어요! 추격을 피해 도망치세요!`, 2.8);
+
+              // Trigger owner bot to actively chase the player!
+              if (ownerBot && ownerBot.stunTimer <= 0) {
+                ownerBot.aiWaitTimer = 0;
+                ownerBot.aiPendingTarget = null;
+                ownerBot.aiMode = 'CHASE';
+                ownerBot.aiTargetActorId = 0;
+              }
+              updateHUD();
+            },
+            onFail: () => {
+              applyPlayerStun();
+            }
+          });
+        }
+      }
+
+      function triggerPowerupAction() {
+        if (state.phase !== 'PLAYING') return;
+        const player = state.actors[0];
+        if (player.stunTimer > 0) return;
+        if (state.powerupCooldown > 0) {
+          showToast(`⚡ 파워업 준비 중이에요! (${Math.ceil(state.powerupCooldown)}초 남음)`, 1.2);
+          return;
+        }
+
+        // Choose reward clearly: Shield if carrying an egg, Speed Boost if empty-handed
+        const rewardType = player.carrying ? 'shield' : 'speed';
+        const rewardLabel = rewardType === 'shield' ? '🛡️ 5초 무적 보호막' : '⚡ 5초 스피드 부스터';
+
+        openQuizModal({
+          tier: 'powerup',
+          badgeText: `⚡ 파워업 5초 퀴즈 → ${rewardLabel}`,
+          onSuccess: () => {
+            state.powerupCooldown = POWERUP_COOLDOWN;
+            if (rewardType === 'shield') {
+              player.shieldTimer = POWERUP_DURATION;
+              showToast('🛡️ 5초간 보호막 발동! 봇과 부딪혀도 알을 지키고 튕겨내요!', 2.6);
+              addPopup(player.x, player.y - 32, '🛡️ 보호막 ON!', '#38bdf8');
+              spawnBurst(player.x, player.y, '#38bdf8', 18);
+            } else {
+              player.speedTimer = POWERUP_DURATION;
+              showToast('⚡ 5초간 스피드 부스터 발동! 빠르게 달려가세요!', 2.6);
+              addPopup(player.x, player.y - 32, '⚡ 스피드 UP!', '#facc15');
+              spawnBurst(player.x, player.y, '#facc15', 18);
+            }
+            SFX.powerup();
+            updateHUD();
+          },
+          onFail: () => {
+            state.powerupCooldown = 6.0; // shorter cooldown on fail
+            applyPlayerStun();
+          }
+        });
+      }
+
+      function applyPlayerStun() {
+        const player = state.actors[0];
+        player.stunTimer = STUN_DURATION;
+        addPopup(player.x, player.y - 34, '😵 6초 기절!', '#fca5a5');
+        showToast('앗, 틀렸어요! 6초 뒤에 다시 움직일 수 있어요!', 3.6);
+      }
+
+      // =========================================================================
+      // 11. AI Bot Logic
+      // =========================================================================
+      function updateBotAI(bot, dt) {
+        if (bot.stunTimer > 0) {
+          bot.vx = 0;
+          bot.vy = 0;
+          bot.aiWaitTimer = 0;
+          bot.aiPendingTarget = null;
+          return;
+        }
+
+        const myBase = TEAMS[bot.id];
+        const player = state.actors[0];
+
+        // If player stole from this bot's base and is still carrying it, CHASE player!
+        if (player.carrying && player.carrying.fromBaseId === bot.id && !bot.carrying) {
+          bot.aiMode = 'CHASE';
+          bot.aiTargetActorId = 0;
+          bot.aiWaitTimer = 0;
+          bot.aiPendingTarget = null;
+        } else if (bot.carrying) {
+          bot.aiMode = 'RETURN';
+          bot.aiWaitTimer = 0;
+          bot.aiPendingTarget = null;
+        } else if (bot.aiMode === 'CHASE') {
+          if (!player.carrying || player.carrying.fromBaseId !== bot.id) {
+            bot.aiMode = 'SEEK';
+          }
+        }
+
+        // Bot pauses realistically to "solve" the quiz before grabbing an egg/lockbox
+        if (bot.aiWaitTimer > 0) {
+          bot.vx = 0;
+          bot.vy = 0;
+          bot.aiWaitTimer -= dt;
+          if (bot.aiWaitTimer <= 0 && bot.aiPendingTarget) {
+            const pending = bot.aiPendingTarget;
+            bot.aiPendingTarget = null;
+            if (pending.type === 'egg') {
+              const idx = state.eggs.indexOf(pending.ref);
+              if (idx !== -1 && Math.hypot(pending.ref.x - bot.x, pending.ref.y - bot.y) < 48) {
+                state.eggs.splice(idx, 1);
+                bot.carrying = {
+                  tier: pending.ref.tier,
+                  pts: EGG_TIERS[pending.ref.tier].pts,
+                  fromBaseId: pending.ref.fromBaseId
+                };
+                bot.aiMode = 'RETURN';
+                spawnBurst(bot.x, bot.y, EGG_TIERS[pending.ref.tier].stripe, 8);
+              }
+            } else if (pending.type === 'lockbox') {
+              if (pending.ref.available && Math.hypot(pending.ref.x - bot.x, pending.ref.y - bot.y) < 52) {
+                pending.ref.available = false;
+                pending.ref.respawnTimer = 26.0;
+                bot.carrying = { tier: 'legendary', pts: 35, fromBaseId: pending.ref.baseId };
+                bot.aiMode = 'RETURN';
+                spawnBurst(bot.x, bot.y, '#fbbf24', 10);
+              }
+            }
+          }
+          return;
+        }
+
+        let tx = myBase.nestX;
+        let ty = myBase.nestY;
+
+        if (bot.aiMode === 'RETURN') {
+          tx = myBase.nestX;
+          ty = myBase.nestY;
+          const distHome = Math.hypot(tx - bot.x, ty - bot.y);
+          if (distHome < 40) {
+            depositEgg(bot);
+            bot.aiMode = 'SEEK';
+          }
+        } else if (bot.aiMode === 'CHASE') {
+          const target = state.actors[bot.aiTargetActorId || 0];
+          tx = target.x;
+          ty = target.y;
+        } else {
+          // SEEK nearest egg or occasionally raid another bot's lockbox
+          let bestScore = -Infinity;
+          let chosenEgg = null;
+          for (const egg of state.eggs) {
+            const d = Math.hypot(egg.x - bot.x, egg.y - bot.y);
+            const val = EGG_TIERS[egg.tier].pts;
+            const utility = val * 7 - d;
+            if (utility > bestScore) {
+              bestScore = utility;
+              chosenEgg = egg;
+            }
+          }
+
+          let chosenBox = null;
+          for (const box of state.baseLockboxes) {
+            if (!box.available || box.baseId === bot.id) continue;
+            const d = Math.hypot(box.x - bot.x, box.y - bot.y);
+            const utility = 120 - d;
+            if (utility > bestScore) {
+              bestScore = utility;
+              chosenBox = box;
+              chosenEgg = null;
+            }
+          }
+
+          if (chosenEgg) {
+            tx = chosenEgg.x;
+            ty = chosenEgg.y;
+            if (Math.hypot(tx - bot.x, ty - bot.y) < 34 && bot.pickupCooldown <= 0) {
+              bot.aiPendingTarget = { type: 'egg', ref: chosenEgg };
+              bot.aiWaitTimer = chosenEgg.tier === 'rare' ? 3.5 : 2.6;
+              return;
+            }
+          } else if (chosenBox) {
+            tx = chosenBox.x;
+            ty = chosenBox.y;
+            if (Math.hypot(tx - bot.x, ty - bot.y) < 36 && bot.pickupCooldown <= 0) {
+              bot.aiPendingTarget = { type: 'lockbox', ref: chosenBox };
+              bot.aiWaitTimer = 4.6;
+              return;
+            }
+          } else {
+            bot.aiDecisionTimer -= dt;
+            if (bot.aiDecisionTimer <= 0) {
+              bot.aiWanderAngle = Math.random() * Math.PI * 2;
+              bot.aiDecisionTimer = 1.6;
+            }
+            tx = WORLD_W / 2 + Math.cos(bot.aiWanderAngle) * 140;
+            ty = WORLD_H / 2 + Math.sin(bot.aiWanderAngle) * 110;
+          }
+        }
+
+        // Steering toward (tx, ty) with gentle obstacle avoidance
+        let dx = tx - bot.x;
+        let dy = ty - bot.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        dx /= dist;
+        dy /= dist;
+
+        // Avoid obstacles smoothly with tangential slide so bots never get stuck head-on
+        for (const obs of OBSTACLES) {
+          const cx = obs.x + obs.w / 2;
+          const cy = obs.y + obs.h / 2;
+          const odx = bot.x - cx;
+          const ody = bot.y - cy;
+          const od = Math.hypot(odx, ody);
+          const avoidR = Math.max(obs.w, obs.h) * 0.72 + bot.radius + 16;
+          if (od < avoidR && od > 0.01) {
+            const push = (avoidR - od) / avoidR;
+            const rx = odx / od;
+            const ry = ody / od;
+            dx += rx * push * 1.4;
+            dy += ry * push * 1.4;
+            const tx1 = -ry, ty1 = rx;
+            const dot = tx1 * dx + ty1 * dy;
+            const sign = dot >= 0 ? 1 : -1;
+            dx += tx1 * sign * push * 0.9;
+            dy += ty1 * sign * push * 0.9;
+          }
+        }
+
+        const nLen = Math.hypot(dx, dy) || 1;
+        dx /= nLen;
+        dy /= nLen;
+
+        let spd = BOT_BASE_SPEED;
+        if (bot.aiMode === 'CHASE') spd *= 1.08;
+        if (bot.carrying) spd *= CARRY_SPEED_MULT;
+
+        bot.vx = dx * spd;
+        bot.vy = dy * spd;
+        bot.x += bot.vx * dt;
+        bot.y += bot.vy * dt;
+        bot.facing = Math.atan2(bot.vy, bot.vx);
+        bot.walkPhase += dt * 6;
+        resolveObstaclesAndBounds(bot);
+      }
+
+      // =========================================================================
+      // 12. Egg Deposit, Collisions & Win Condition
+      // =========================================================================
+      function depositEgg(actor) {
+        if (!actor.carrying) return;
+        const { tier, pts } = actor.carrying;
+        actor.score += pts;
+        actor.hatchedCount += 1;
+        actor.carrying = null;
+
+        const base = TEAMS[actor.id];
+        spawnBurst(base.nestX, base.nestY, EGG_TIERS[tier].stripe, 22);
+        addPopup(base.nestX, base.nestY - 26, `+${pts}점 부화!`, actor.isPlayer ? '#fde047' : '#ffffff');
+
+        if (actor.isPlayer) {
+          SFX.hatch(pts);
+          showToast(`🐣 알 부화 성공! +${pts}점 획득! (현재 ${actor.score}점)`, 2.5);
+        }
+
+        updateHUD();
+
+        if (actor.score >= WIN_SCORE) {
+          endGame(actor);
+        }
+      }
+
+      function handleActorCollisions() {
+        for (let i = 0; i < state.actors.length; i++) {
+          for (let j = i + 1; j < state.actors.length; j++) {
+            const a = state.actors[i];
+            const b = state.actors[j];
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const dist = Math.hypot(dx, dy) || 0.01;
+            const minDist = a.radius + b.radius - 2;
+            if (dist < minDist) {
+              // Separate actors
+              const overlap = (minDist - dist) * 0.5;
+              const nx = dx / dist;
+              const ny = dy / dist;
+              a.x -= nx * overlap;
+              a.y -= ny * overlap;
+              b.x += nx * overlap;
+              b.y += ny * overlap;
+
+              // Check egg drop on bump!
+              maybeDropEggOnBump(a, b, nx, ny);
+              maybeDropEggOnBump(b, a, -nx, -ny);
+            }
+          }
+        }
+      }
+
+      function maybeDropEggOnBump(carrier, hitter, nx, ny) {
+        if (!carrier.carrying || hitter.stunTimer > 0) return;
+        if (carrier.shieldTimer > 0) {
+          // Shield protects carrier & pushes hitter back!
+          hitter.x += nx * 28;
+          hitter.y += ny * 28;
+          addPopup(carrier.x, carrier.y - 30, '🛡️ 방어!', '#38bdf8');
+          return;
+        }
+
+        // Drop the carried egg nearby
+        const dropped = carrier.carrying;
+        carrier.carrying = null;
+        carrier.pickupCooldown = 1.0;
+
+        const dropX = Math.max(50, Math.min(WORLD_W - 50, carrier.x - nx * 46));
+        const dropY = Math.max(50, Math.min(WORLD_H - 50, carrier.y - ny * 46));
+
+        state.eggs.push({
+          id: state.nextEggId++,
+          tier: dropped.tier,
+          x: dropX,
+          y: dropY,
+          bobOffset: 0,
+          dropped: true,
+          fromBaseId: dropped.fromBaseId
+        });
+
+        spawnBurst(dropX, dropY, '#f87171', 12);
+        addPopup(carrier.x, carrier.y - 26, '알 떨어뜨림!', '#fca5a5');
+        if (carrier.isPlayer) {
+          SFX.drop();
+          showToast('💥 봇과 부딪혀서 알을 떨어뜨렸어요! 다시 줍거나 훔치세요!', 2.4);
+        }
+        updateHUD();
+      }
+
+      function endGame(winner) {
+        state.phase = 'ENDED';
+        if (winner.isPlayer) {
+          SFX.winFanfare();
+          resultKicker.textContent = '🎉 미션 성공!';
+          resultTitle.textContent = '🏆 파란 팀(나) 우승!';
+          resultSubtitle.textContent = `가장 먼저 ${winner.score}점을 달성해서 경기장의 챔피언이 되었어요!`;
+        } else {
+          SFX.loseChime();
+          resultKicker.textContent = '경기 종료!';
+          resultTitle.textContent = `👏 ${winner.name}이(가) 먼저 ${WIN_SCORE}점을 달성했어요!`;
+          resultSubtitle.textContent = '오답 노트를 복습하고 다시 도전해 볼까요?';
+        }
+
+        const acc = state.totalQuizzes > 0
+          ? Math.round((state.correctQuizzes / state.totalQuizzes) * 100)
+          : 100;
+        resultAccuracy.textContent = `영어 퀴즈 정답률 ${acc}% (${state.correctQuizzes}/${state.totalQuizzes})`;
+
+        // Render rankings
+        const sorted = [...state.actors].sort((a, b) => b.score - a.score);
+        rankingList.innerHTML = '';
+        const medals = ['🥇', '🥈', '🥉', '4️⃣'];
+        sorted.forEach((act, idx) => {
+          const row = document.createElement('div');
+          row.className = 'rank-row' + (act.isPlayer ? ' is-me' : '');
+          row.innerHTML = `
+            <div class="rank-left">
+              <span>${medals[idx]}</span>
+              <span class="team-brick" style="background:${act.color}; width:14px; height:14px;"></span>
+              <span>${act.name}</span>
+            </div>
+            <div class="rank-right">${act.score}점 · 알 ${act.hatchedCount}개 부화</div>
+          `;
+          rankingList.appendChild(row);
+        });
+
+        // Wrong Answer Review
+        const wrongCount = state.wrongAnswers.length;
+        btnToggleReview.textContent = `📖 오답 노트 복습하기 (${wrongCount})`;
+        reviewSection.classList.remove('open');
+        reviewList.innerHTML = '';
+
+        if (wrongCount === 0) {
+          reviewList.innerHTML = `
+            <div style="padding:16px; text-align:center; background:#f0fdf4; border:2px solid #86efac; border-radius:14px; color:#15803d; font-weight:800;">
+              🌟 완벽해요! 이번 경기에서 틀린 영어 문제가 하나도 없어요!
+            </div>
+          `;
+        } else {
+          state.wrongAnswers.forEach((item, i) => {
+            const card = document.createElement('div');
+            card.className = 'review-card';
+            card.innerHTML = `
+              <div class="review-thumb">${renderPictureSVG(item.pic)}</div>
+              <div class="review-body">
+                <div class="review-q">${i + 1}. [${item.topic}] ${item.en}</div>
+                <div class="review-meta">
+                  <span class="review-wrong">내 답: ${item.picked}</span>
+                  <span class="review-correct">정답: ${item.correct}</span>
+                </div>
+                <div class="review-kr">💡 뜻: ${item.kr}</div>
+              </div>
+            `;
+            reviewList.appendChild(card);
+          });
+        }
+
+        resultModal.classList.add('open');
+      }
+
+      // =========================================================================
+      // 13. Main Update Loop
+      // =========================================================================
+      function update(dt) {
+        if (state.toastTimer > 0) {
+          state.toastTimer -= dt;
+          if (state.toastTimer <= 0) {
+            toastBanner.classList.remove('show');
+          }
+        }
+
+        if (state.phase === 'PLAYING' || state.phase === 'QUIZ') {
+          state.realElapsed = (state.realElapsed || 0) + dt;
+        }
+
+        // Handle Quiz countdown timer even while arena is paused
+        if (state.phase === 'QUIZ' && state.activeQuiz && state.activeQuiz.isSpeedQuiz && !state.activeQuiz.resolved) {
+          state.activeQuiz.timeLeft -= dt;
+          const clamped = Math.max(0, state.activeQuiz.timeLeft);
+          quizTimerText.textContent = `${clamped.toFixed(1)}초`;
+          quizTimerFill.style.width = `${(clamped / 5.0) * 100}%`;
+          if (state.activeQuiz.timeLeft <= 0) {
+            handleQuizAnswer(-1); // Timeout
+          }
+          updateHUD();
+          return;
+        }
+
+        if (state.phase !== 'PLAYING') return;
+
+        state.time += dt;
+
+        // Power-up cooldown
+        if (state.powerupCooldown > 0) {
+          state.powerupCooldown = Math.max(0, state.powerupCooldown - dt);
+        }
+
+        // Spawn timers tuned for ~7-8 minute match flow
+        const commonCount = state.eggs.filter(e => e.tier === 'common' && !e.dropped).length;
+        if (commonCount < 4) {
+          state.commonSpawnTimer += dt;
+          if (state.commonSpawnTimer >= 3.5) {
+            state.commonSpawnTimer = 0;
+            spawnCommonEgg();
+          }
+        }
+
+        const rareCount = state.eggs.filter(e => e.tier === 'rare' && !e.dropped).length;
+        if (rareCount < 2) {
+          state.rareSpawnTimer += dt;
+          if (state.rareSpawnTimer >= 10.0) {
+            state.rareSpawnTimer = 0;
+            spawnRareEgg();
+          }
+        }
+
+        // Lockbox respawn timers
+        for (const box of state.baseLockboxes) {
+          if (!box.available) {
+            box.respawnTimer -= dt;
+            if (box.respawnTimer <= 0) {
+              box.available = true;
+              spawnBurst(box.x, box.y, '#fbbf24', 12);
+            }
+          }
+        }
+
+        // Update Player
+        const player = state.actors[0];
+        if (player.stunTimer > 0) player.stunTimer = Math.max(0, player.stunTimer - dt);
+        if (player.shieldTimer > 0) player.shieldTimer = Math.max(0, player.shieldTimer - dt);
+        if (player.speedTimer > 0) player.speedTimer = Math.max(0, player.speedTimer - dt);
+        if (player.pickupCooldown > 0) player.pickupCooldown = Math.max(0, player.pickupCooldown - dt);
+
+        if (player.stunTimer <= 0) {
+          let mx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+          let my = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
+          if (mx !== 0 || my !== 0) {
+            const len = Math.hypot(mx, my);
+            mx /= len;
+            my /= len;
+          } else if (joystickVec.active && (joystickVec.x !== 0 || joystickVec.y !== 0)) {
+            mx = joystickVec.x;
+            my = joystickVec.y;
+          }
+
+          if (mx !== 0 || my !== 0) {
+            let spd = PLAYER_BASE_SPEED;
+            if (player.carrying) spd *= CARRY_SPEED_MULT;
+            if (player.speedTimer > 0) spd *= SPEED_BOOST_MULT;
+
+            player.vx = mx * spd;
+            player.vy = my * spd;
+            player.x += player.vx * dt;
+            player.y += player.vy * dt;
+            player.facing = Math.atan2(my, mx);
+            player.walkPhase += dt * (player.speedTimer > 0 ? 11 : 7) * Math.min(1, Math.hypot(mx, my));
+
+            if (player.speedTimer > 0 && Math.random() < 0.45) {
+              const dirLen = Math.hypot(mx, my) || 1;
+              state.particles.push({
+                x: player.x - (mx / dirLen) * 16,
+                y: player.y - (my / dirLen) * 16,
+                vx: -(mx / dirLen) * 30 + (Math.random() - 0.5) * 30,
+                vy: -(my / dirLen) * 30 + (Math.random() - 0.5) * 30,
+                life: 0.28,
+                maxLife: 0.28,
+                size: 5,
+                color: '#fde047'
+              });
+            }
+          } else {
+            player.vx = 0;
+            player.vy = 0;
+          }
+          resolveObstaclesAndBounds(player);
+        }
+
+        // Check player returning home with egg
+        if (player.carrying) {
+          const myBase = TEAMS[0];
+          const distHome = Math.hypot(player.x - myBase.nestX, player.y - myBase.nestY);
+          if (distHome < 46) {
+            depositEgg(player);
+          }
+        }
+
+        // Update AI Bots
+        for (let i = 1; i < state.actors.length; i++) {
+          const bot = state.actors[i];
+          if (bot.stunTimer > 0) bot.stunTimer = Math.max(0, bot.stunTimer - dt);
+          if (bot.pickupCooldown > 0) bot.pickupCooldown = Math.max(0, bot.pickupCooldown - dt);
+          updateBotAI(bot, dt);
+        }
+
+        // Collisions
+        handleActorCollisions();
+
+        // Update Particles
+        for (let i = state.particles.length - 1; i >= 0; i--) {
+          const p = state.particles[i];
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.life -= dt;
+          if (p.life <= 0) state.particles.splice(i, 1);
+        }
+
+        // Update Popups
+        for (let i = state.popups.length - 1; i >= 0; i--) {
+          const pop = state.popups[i];
+          pop.y -= 28 * dt;
+          pop.life -= dt;
+          if (pop.life <= 0) state.popups.splice(i, 1);
+        }
+
+        updateHUD();
+      }
+
+      // =========================================================================
+      // 14. HUD Sync
+      // =========================================================================
+      function updateHUD() {
+        const leaderScore = Math.max(...state.actors.map(a => a.score));
+
+        if (hudTimerEl) {
+          const totalSec = Math.floor(state.realElapsed || 0);
+          const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
+          const ss = String(totalSec % 60).padStart(2, '0');
+          hudTimerEl.textContent = `⏱ ${mm}:${ss} · 목표 ${WIN_SCORE}점`;
+        }
+
+        state.actors.forEach((act, idx) => {
+          const valEl = document.getElementById(`score-val-${idx}`);
+          const barEl = document.getElementById(`score-bar-${idx}`);
+          const cardEl = document.getElementById(`hud-score-${idx}`);
+          if (valEl) valEl.textContent = `${act.score}`;
+          if (barEl) barEl.style.width = `${Math.min(100, (act.score / WIN_SCORE) * 100)}%`;
+          if (cardEl) {
+            cardEl.classList.toggle('is-leading', act.score > 0 && act.score === leaderScore);
+          }
+        });
+
+        const player = state.actors[0];
+        if (!player) return;
+
+        if (player.carrying) {
+          const tier = EGG_TIERS[player.carrying.tier];
+          carryIndicator.textContent = `🥚 ${tier.label} (+${tier.pts})`;
+          carryIndicator.classList.add('has-egg');
+        } else {
+          carryIndicator.textContent = '🥚 빈 손';
+          carryIndicator.classList.remove('has-egg');
+        }
+
+        if (player.shieldTimer > 0) {
+          buffIndicator.className = 'buff-indicator active-shield';
+          buffIndicator.textContent = `🛡️ 보호막 ${player.shieldTimer.toFixed(1)}s`;
+        } else if (player.speedTimer > 0) {
+          buffIndicator.className = 'buff-indicator active-speed';
+          buffIndicator.textContent = `⚡ 스피드 ${player.speedTimer.toFixed(1)}s`;
+        } else {
+          buffIndicator.className = 'buff-indicator';
+        }
+
+        // Floating Grab button highlight when near an egg or lockbox
+        const interactTarget = findPlayerInteractTarget();
+        if (interactTarget && !player.carrying && player.stunTimer <= 0) {
+          btnGrab.classList.add('ready-target');
+          grabBtnLabel.textContent = interactTarget.type === 'lockbox' ? '황금알 훔치기!' : '알 줍기!';
+        } else {
+          btnGrab.classList.remove('ready-target');
+          grabBtnLabel.textContent = '줍기 / 훔치기';
+        }
+
+        // Floating Power-up cooldown bar
+        if (state.powerupCooldown > 0) {
+          btnPowerup.classList.add('on-cooldown');
+          const pct = ((POWERUP_COOLDOWN - state.powerupCooldown) / POWERUP_COOLDOWN) * 100;
+          powerupCdFill.style.height = `${pct}%`;
+          powerupBtnLabel.textContent = `${Math.ceil(state.powerupCooldown)}초`;
+        } else {
+          btnPowerup.classList.remove('on-cooldown');
+          powerupCdFill.style.height = '100%';
+          powerupBtnLabel.textContent = '파워업 퀴즈';
+        }
+      }
+
+      // =========================================================================
+      // 15. Canvas Rendering (Roblox Blocky Cartoon Style)
+      // =========================================================================
+      function roundRectPath(x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, r);
+      }
+
+      function drawEggShape(x, y, tier, scale = 1, glow = false) {
+        const info = EGG_TIERS[tier];
+        const r = info.radius * scale;
+        ctx.save();
+        ctx.translate(x, y);
+
+        if (glow) {
+          ctx.beginPath();
+          ctx.arc(0, 0, r * 1.45, 0, Math.PI * 2);
+          ctx.fillStyle = tier === 'legendary'
+            ? 'rgba(250, 204, 21, 0.35)'
+            : tier === 'rare'
+              ? 'rgba(56, 189, 248, 0.35)'
+              : 'rgba(255, 255, 255, 0.25)';
+          ctx.fill();
+        }
+
+        // Ground shadow
+        ctx.beginPath();
+        ctx.ellipse(0, r * 0.9, r * 0.85, r * 0.36, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.22)';
+        ctx.fill();
+
+        // Egg oval body
+        ctx.beginPath();
+        ctx.ellipse(0, 0, r * 0.84, r * 1.08, 0, 0, Math.PI * 2);
+        ctx.fillStyle = info.body;
+        ctx.fill();
+
+        // Cute stripe / spots
+        ctx.save();
+        ctx.clip();
+        ctx.fillStyle = info.stripe;
+        ctx.fillRect(-r, -r * 0.22, r * 2, r * 0.36);
+        ctx.beginPath();
+        ctx.arc(-r * 0.32, r * 0.45, r * 0.2, 0, Math.PI * 2);
+        ctx.arc(r * 0.34, -r * 0.5, r * 0.18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Specular highlight
+        ctx.beginPath();
+        ctx.ellipse(-r * 0.28, -r * 0.42, r * 0.18, r * 0.3, -0.4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.fill();
+
+        // Crisp cartoon outline
+        ctx.beginPath();
+        ctx.ellipse(0, 0, r * 0.84, r * 1.08, 0, 0, Math.PI * 2);
+        ctx.lineWidth = 2.6;
+        ctx.strokeStyle = info.outline;
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      function drawArenaBackground() {
+        // Outer turf base
+        ctx.fillStyle = '#38a147';
+        ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+
+        // Roblox stud grid across grass
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        for (let sx = 24; sx < WORLD_W; sx += 48) {
+          for (let sy = 24; sy < WORLD_H; sy += 48) {
+            ctx.beginPath();
+            ctx.arc(sx, sy, 6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // Outer wooden/stone arena fence border
+        ctx.lineWidth = 24;
+        ctx.strokeStyle = '#1e293b';
+        ctx.strokeRect(12, 12, WORLD_W - 24, WORLD_H - 24);
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = '#94a3b8';
+        ctx.strokeRect(22, 22, WORLD_W - 44, WORLD_H - 44);
+
+        // Sandy-cream walkways connecting bases, center & rare spots
+        ctx.fillStyle = '#efe3c5';
+        ctx.strokeStyle = '#d6c39a';
+        ctx.lineWidth = 4;
+
+        // Cross avenues
+        roundRectPath(90, 342, WORLD_W - 180, 76, 20);
+        ctx.fill();
+        ctx.stroke();
+
+        roundRectPath(562, 70, 76, WORLD_H - 140, 20);
+        ctx.fill();
+        ctx.stroke();
+
+        // Diagonal connectors from corner bases to center
+        ctx.save();
+        ctx.strokeStyle = '#efe3c5';
+        ctx.lineWidth = 54;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(150, 140); ctx.lineTo(600, 380);
+        ctx.moveTo(1050, 140); ctx.lineTo(600, 380);
+        ctx.moveTo(150, 620); ctx.lineTo(600, 380);
+        ctx.moveTo(1050, 620); ctx.lineTo(600, 380);
+        ctx.stroke();
+        ctx.restore();
+
+        // Central Nest Plaza
+        ctx.beginPath();
+        ctx.arc(WORLD_W / 2, WORLD_H / 2, 118, 0, Math.PI * 2);
+        ctx.fillStyle = '#fef3c7';
+        ctx.fill();
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = '#f59e0b';
+        ctx.stroke();
+
+        // Inner straw ring
+        ctx.beginPath();
+        ctx.arc(WORLD_W / 2, WORLD_H / 2, 86, 0, Math.PI * 2);
+        ctx.fillStyle = '#fde68a';
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 8]);
+        ctx.strokeStyle = '#d97706';
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = '#92400e';
+        ctx.font = '800 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🥚 중앙 알 둥지 (+10점)', WORLD_W / 2, WORLD_H / 2 - 96);
+
+        // 4 Rare Alcove Pads
+        for (const sp of RARE_SPOTS) {
+          ctx.beginPath();
+          ctx.arc(sp.x, sp.y, 32, 0, Math.PI * 2);
+          ctx.fillStyle = '#e0f2fe';
+          ctx.fill();
+          ctx.lineWidth = 3.5;
+          ctx.strokeStyle = '#0284c7';
+          ctx.stroke();
+        }
+
+        // 4 Team Bases
+        for (const t of TEAMS) {
+          ctx.save();
+          // Base pad
+          roundRectPath(t.baseX, t.baseY, BASE_W, BASE_H, 18);
+          ctx.fillStyle = t.light;
+          ctx.globalAlpha = 0.88;
+          ctx.fill();
+          ctx.globalAlpha = 1;
+          ctx.lineWidth = 5;
+          ctx.strokeStyle = t.color;
+          ctx.stroke();
+
+          // Base studs
+          ctx.fillStyle = t.color;
+          ctx.globalAlpha = 0.16;
+          for (let bx = t.baseX + 24; bx < t.baseX + BASE_W - 10; bx += 34) {
+            for (let by = t.baseY + 24; by < t.baseY + BASE_H - 10; by += 34) {
+              ctx.beginPath();
+              ctx.arc(bx, by, 6, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+          ctx.globalAlpha = 1;
+
+          // Hatching Nest Circle
+          ctx.beginPath();
+          ctx.arc(t.nestX, t.nestY, 34, 0, Math.PI * 2);
+          ctx.fillStyle = '#fffbeb';
+          ctx.fill();
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = t.color;
+          ctx.stroke();
+
+          // Label
+          ctx.fillStyle = t.dark;
+          ctx.font = '900 13px sans-serif';
+          ctx.textAlign = 'center';
+          const labelY = t.id < 2 ? t.baseY + 22 : t.baseY + BASE_H - 12;
+          ctx.fillText(t.isPlayer ? '★ 나의 기지 (부화)' : `${t.name} 기지`, t.baseX + BASE_W / 2, labelY);
+          ctx.restore();
+        }
+      }
+
+      function drawObstacles() {
+        for (const obs of OBSTACLES) {
+          // Shadow
+          roundRectPath(obs.x + 4, obs.y + 8, obs.w, obs.h, 10);
+          ctx.fillStyle = 'rgba(0,0,0,0.22)';
+          ctx.fill();
+
+          // Extruded 2.5D side face
+          roundRectPath(obs.x, obs.y + 6, obs.w, obs.h, 10);
+          ctx.fillStyle = obs.color;
+          ctx.fill();
+
+          // Top face
+          roundRectPath(obs.x, obs.y, obs.w, obs.h - 4, 10);
+          ctx.fillStyle = obs.top;
+          ctx.fill();
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = 'rgba(15,23,42,0.45)';
+          ctx.stroke();
+
+          // Roblox top studs
+          ctx.fillStyle = 'rgba(255,255,255,0.26)';
+          for (let sx = obs.x + 16; sx < obs.x + obs.w - 8; sx += 22) {
+            for (let sy = obs.y + 14; sy < obs.y + obs.h - 10; sy += 20) {
+              ctx.beginPath();
+              ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+      }
+
+      function drawLockboxes() {
+        for (const box of state.baseLockboxes) {
+          ctx.save();
+          ctx.translate(box.x, box.y);
+
+          // Pedestal pad
+          roundRectPath(-20, -20, 40, 40, 10);
+          ctx.fillStyle = box.available ? '#fef08a' : '#e2e8f0';
+          ctx.fill();
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = box.available ? '#d97706' : '#94a3b8';
+          ctx.stroke();
+
+          if (box.available) {
+            const bob = Math.sin(state.time * 4 + box.baseId) * 3;
+            drawEggShape(0, bob - 2, 'legendary', 0.92, true);
+            // Tiny lock badge
+            ctx.font = 'bold 13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🔒', 14, -14 + bob);
+          } else {
+            ctx.fillStyle = '#64748b';
+            ctx.font = '800 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${Math.ceil(box.respawnTimer)}s`, 0, 4);
+          }
+          ctx.restore();
+        }
+      }
+
+      function drawActor(act) {
+        ctx.save();
+        ctx.translate(act.x, act.y);
+
+        // Shield Aura
+        if (act.shieldTimer > 0) {
+          const pulse = 1 + Math.sin(state.time * 10) * 0.08;
+          ctx.beginPath();
+          ctx.arc(0, 0, 32 * pulse, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.24)';
+          ctx.fill();
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = '#38bdf8';
+          ctx.stroke();
+        }
+
+        // Player subtle ground ring so you never lose yourself
+        if (act.isPlayer) {
+          ctx.beginPath();
+          ctx.arc(0, 4, 24, 0, Math.PI * 2);
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+          ctx.stroke();
+        }
+
+        // Ground shadow
+        ctx.beginPath();
+        ctx.ellipse(0, 18, 17, 7, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.28)';
+        ctx.fill();
+
+        const isMoving = Math.hypot(act.vx, act.vy) > 5;
+        const swing = isMoving ? Math.sin(act.walkPhase) * 5 : 0;
+
+        // Legs (Roblox blocky feet)
+        ctx.fillStyle = act.dark;
+        roundRectPath(-11, 8 + swing * 0.5, 9, 10, 3);
+        ctx.fill();
+        roundRectPath(2, 8 - swing * 0.5, 9, 10, 3);
+        ctx.fill();
+
+        // Arms (yellow/skin blocks swinging)
+        ctx.fillStyle = '#fde047';
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 2;
+        roundRectPath(-19, -4 - swing, 8, 14, 3);
+        ctx.fill(); ctx.stroke();
+        roundRectPath(11, -4 + swing, 8, 14, 3);
+        ctx.fill(); ctx.stroke();
+
+        // Torso block
+        roundRectPath(-13, -6, 26, 20, 5);
+        ctx.fillStyle = act.color;
+        ctx.fill();
+        ctx.stroke();
+
+        // Head block (Roblox cute rounded square)
+        roundRectPath(-12, -23, 24, 20, 6);
+        ctx.fillStyle = '#fef08a';
+        ctx.fill();
+        ctx.stroke();
+
+        // Eyes & Expression
+        const lookX = Math.cos(act.facing) * 2.5;
+        ctx.fillStyle = '#0f172a';
+        if (act.stunTimer > 0) {
+          // Dizzy X eyes
+          ctx.font = '900 10px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('X  X', 0, -10);
+        } else {
+          ctx.beginPath();
+          ctx.arc(-4.5 + lookX, -13, 2.2, 0, Math.PI * 2);
+          ctx.arc(4.5 + lookX, -13, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Smile or angry eyebrows when chasing
+          if (!act.isPlayer && act.aiMode === 'CHASE') {
+            ctx.beginPath();
+            ctx.moveTo(-8, -17); ctx.lineTo(-2, -15);
+            ctx.moveTo(8, -17); ctx.lineTo(2, -15);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#dc2626';
+            ctx.stroke();
+          } else {
+            ctx.beginPath();
+            ctx.arc(lookX, -9.5, 3.5, 0.15, Math.PI - 0.15);
+            ctx.lineWidth = 1.8;
+            ctx.strokeStyle = '#0f172a';
+            ctx.stroke();
+          }
+        }
+
+        // Carried Egg perched clearly above character
+        if (act.carrying) {
+          drawEggShape(0, -34, act.carrying.tier, 0.78, false);
+        }
+
+        // Stunned dizzy stars + emoji + live recovery countdown
+        if (act.stunTimer > 0) {
+          const orbit = state.time * 6;
+          ctx.font = '15px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('😵', Math.cos(orbit) * 14, -36 + Math.sin(orbit) * 4);
+          ctx.fillText('⭐', Math.cos(orbit + Math.PI) * 14, -36 + Math.sin(orbit + Math.PI) * 4);
+
+          const ratio = Math.max(0, Math.min(1, act.stunTimer / STUN_DURATION));
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+          roundRectPath(-18, -55, 36, 11, 4);
+          ctx.fill();
+          ctx.fillStyle = '#f87171';
+          roundRectPath(-16, -53, 32 * ratio, 7, 3);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '800 10px sans-serif';
+          ctx.fillText(`${act.stunTimer.toFixed(1)}s`, 0, -59);
+        } else if (!act.isPlayer && act.aiMode === 'CHASE') {
+          // Chasing alert badge
+          const bounce = Math.abs(Math.sin(state.time * 8)) * 5;
+          ctx.fillStyle = '#dc2626';
+          ctx.beginPath();
+          ctx.arc(0, -38 - bounce, 10, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '900 13px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('!', 0, -33.5 - bounce);
+        } else if (!act.isPlayer && act.aiWaitTimer > 0) {
+          const bob = Math.sin(state.time * 7) * 2.5;
+          ctx.font = '14px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('📝', 0, -35 + bob);
+        }
+
+        // Name tag below
+        ctx.font = '800 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+        roundRectPath(-24, 21, 48, 16, 5);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(act.isPlayer ? '나' : act.name, 0, 32.5);
+
+        ctx.restore();
+      }
+
+      function render() {
+        const rect = arenaWrap.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const cw = Math.max(1, Math.floor(rect.width));
+        const ch = Math.max(1, Math.floor(rect.height));
+
+        if (canvas.width !== cw * dpr || canvas.height !== ch * dpr) {
+          canvas.width = cw * dpr;
+          canvas.height = ch * dpr;
+        }
+
+        ctx.save();
+        ctx.scale(dpr, dpr);
+
+        // Background fill outside world bounds
+        ctx.fillStyle = '#2f8539';
+        ctx.fillRect(0, 0, cw, ch);
+
+        // Camera framing:
+        // On desktop/landscape tablet (>= 720px wide), fit the whole 1200x760 arena cleanly.
+        // On narrow portrait phones (< 720px wide), use a smooth follow camera centered on player.
+        let scale, offsetX, offsetY;
+        const player = state.actors[0];
+        if (cw >= 720) {
+          scale = Math.min(cw / WORLD_W, ch / WORLD_H);
+          offsetX = (cw - WORLD_W * scale) / 2;
+          offsetY = (ch - WORLD_H * scale) / 2;
+        } else {
+          scale = Math.max(0.58, Math.min(cw / 640, ch / 520));
+          const targetCamX = player ? player.x : WORLD_W / 2;
+          const targetCamY = player ? player.y : WORLD_H / 2;
+          state.camera.x += (targetCamX - state.camera.x) * 0.18;
+          state.camera.y += (targetCamY - state.camera.y) * 0.18;
+          const viewW = cw / scale;
+          const viewH = ch / scale;
+          const clampedX = Math.max(viewW / 2, Math.min(WORLD_W - viewW / 2, state.camera.x));
+          const clampedY = Math.max(viewH / 2, Math.min(WORLD_H - viewH / 2, state.camera.y));
+          offsetX = cw / 2 - clampedX * scale;
+          offsetY = ch / 2 - clampedY * scale;
+        }
+
+        ctx.translate(offsetX, offsetY);
+        ctx.scale(scale, scale);
+
+        drawArenaBackground();
+        drawLockboxes();
+        drawObstacles();
+
+        // Draw loose eggs
+        for (const egg of state.eggs) {
+          const bob = Math.sin(state.time * 4 + egg.bobOffset) * 2.5;
+          drawEggShape(egg.x, egg.y + bob, egg.tier, 1, egg.tier !== 'common');
+        }
+
+        // Interact highlight ring around nearby egg/lockbox for player, or return-home beacon when carrying
+        if (state.phase === 'PLAYING' && player) {
+          if (player.carrying) {
+            const myBase = TEAMS[0];
+            const pulseR = 38 + Math.sin(state.time * 7) * 5;
+            ctx.beginPath();
+            ctx.arc(myBase.nestX, myBase.nestY, pulseR, 0, Math.PI * 2);
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#fde047';
+            ctx.stroke();
+
+            ctx.font = '900 13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#0f172a';
+            const beaconY = myBase.nestY - 46 + Math.sin(state.time * 6) * 3;
+            ctx.strokeText('🏠 여기로 부화!', myBase.nestX, beaconY);
+            ctx.fillStyle = '#fef08a';
+            ctx.fillText('🏠 여기로 부화!', myBase.nestX, beaconY);
+          } else {
+            const target = findPlayerInteractTarget();
+            if (target) {
+              const tx = target.type === 'egg' ? target.egg.x : target.box.x;
+              const ty = target.type === 'egg' ? target.egg.y : target.box.y;
+              ctx.beginPath();
+              ctx.arc(tx, ty, 28 + Math.sin(state.time * 8) * 3, 0, Math.PI * 2);
+              ctx.lineWidth = 3;
+              ctx.strokeStyle = '#fde047';
+              ctx.stroke();
+            }
+          }
+        }
+
+        // Draw actors sorted by Y for natural top-down overlap
+        const sortedActors = [...state.actors].sort((a, b) => a.y - b.y);
+        for (const act of sortedActors) {
+          drawActor(act);
+        }
+
+        // Draw particles
+        for (const p of state.particles) {
+          ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+        }
+        ctx.globalAlpha = 1;
+
+        // Draw floating popups
+        for (const pop of state.popups) {
+          ctx.globalAlpha = Math.max(0, pop.life / pop.maxLife);
+          ctx.font = '900 16px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = '#0f172a';
+          ctx.strokeText(pop.text, pop.x, pop.y);
+          ctx.fillStyle = pop.color;
+          ctx.fillText(pop.text, pop.x, pop.y);
+        }
+        ctx.globalAlpha = 1;
+
+        ctx.restore();
+      }
+
+      // =========================================================================
+      // 16. Input Handling (Keyboard + 360° Analog Floating Joystick & Buttons)
+      // =========================================================================
+      const joystickBase = document.getElementById('joystick-base');
+      const joystickKnob = document.getElementById('joystick-knob');
+      let joystickPointerId = null;
+
+      function updateJoystickVisual() {
+        const maxTravel = (joystickBase.clientWidth - joystickKnob.clientWidth) * 0.5 || 44;
+        let vx = joystickVec.x;
+        let vy = joystickVec.y;
+        if (!joystickVec.active) {
+          const kx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+          const ky = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
+          if (kx !== 0 || ky !== 0) {
+            const kLen = Math.hypot(kx, ky);
+            vx = kx / kLen;
+            vy = ky / kLen;
+          }
+        }
+        const isLit = joystickVec.active || vx !== 0 || vy !== 0;
+        joystickBase.classList.toggle('active', isLit);
+        joystickKnob.style.transform = `translate3d(${(vx * maxTravel).toFixed(1)}px, ${(vy * maxTravel).toFixed(1)}px, 0)`;
+      }
+
+      window.addEventListener('keydown', (e) => {
+        const k = e.key.toLowerCase();
+
+        // Answer quiz via keys 1-4
+        if (state.phase === 'QUIZ' && state.activeQuiz && !state.activeQuiz.resolved) {
+          if (['1', '2', '3', '4'].includes(k)) {
+            e.preventDefault();
+            handleQuizAnswer(parseInt(k, 10) - 1);
+            return;
+          }
+        }
+
+        if (k === 'arrowup' || k === 'w') { keys.up = true; updateJoystickVisual(); }
+        else if (k === 'arrowdown' || k === 's') { keys.down = true; updateJoystickVisual(); }
+        else if (k === 'arrowleft' || k === 'a') { keys.left = true; updateJoystickVisual(); }
+        else if (k === 'arrowright' || k === 'd') { keys.right = true; updateJoystickVisual(); }
+        else if (e.code === 'Space') {
+          if (state.phase === 'PLAYING') {
+            e.preventDefault();
+            btnGrab.classList.add('pressed');
+            triggerGrabAction();
+          }
+        } else if (k === 'e') {
+          if (state.phase === 'PLAYING') {
+            e.preventDefault();
+            btnPowerup.classList.add('pressed');
+            triggerPowerupAction();
+          }
+        }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        const k = e.key.toLowerCase();
+        if (k === 'arrowup' || k === 'w') { keys.up = false; updateJoystickVisual(); }
+        else if (k === 'arrowdown' || k === 's') { keys.down = false; updateJoystickVisual(); }
+        else if (k === 'arrowleft' || k === 'a') { keys.left = false; updateJoystickVisual(); }
+        else if (k === 'arrowright' || k === 'd') { keys.right = false; updateJoystickVisual(); }
+        else if (e.code === 'Space') { btnGrab.classList.remove('pressed'); }
+        else if (k === 'e') { btnPowerup.classList.remove('pressed'); }
+      });
+
+      function updateJoystickFromPoint(clientX, clientY) {
+        const rect = joystickBase.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const maxRadius = (rect.width - joystickKnob.offsetWidth) * 0.5 || 44;
+        const dx = clientX - cx;
+        const dy = clientY - cy;
+        const dist = Math.hypot(dx, dy);
+        const deadzone = 7;
+
+        if (dist <= deadzone) {
+          joystickVec.x = 0;
+          joystickVec.y = 0;
+        } else {
+          // Smooth analog magnitude (0.4 -> 1.0) in any 360° / diagonal direction
+          const normMag = Math.min(1, 0.35 + ((dist - deadzone) / Math.max(1, maxRadius - deadzone)) * 0.65);
+          joystickVec.x = (dx / dist) * normMag;
+          joystickVec.y = (dy / dist) * normMag;
+        }
+        updateJoystickVisual();
+      }
+
+      joystickBase.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        SFX.ensureCtx();
+        joystickPointerId = e.pointerId;
+        joystickBase.setPointerCapture(e.pointerId);
+        joystickVec.active = true;
+        updateJoystickFromPoint(e.clientX, e.clientY);
+      });
+
+      joystickBase.addEventListener('pointermove', (e) => {
+        if (e.pointerId !== joystickPointerId) return;
+        e.preventDefault();
+        updateJoystickFromPoint(e.clientX, e.clientY);
+      });
+
+      function releaseJoystick(e) {
+        if (e.pointerId !== joystickPointerId) return;
+        joystickPointerId = null;
+        joystickVec.active = false;
+        joystickVec.x = 0;
+        joystickVec.y = 0;
+        updateJoystickVisual();
+      }
+
+      joystickBase.addEventListener('pointerup', releaseJoystick);
+      joystickBase.addEventListener('pointercancel', releaseJoystick);
+
+      // Action buttons (pointerdown for instant zero-lag response on touch)
+      btnGrab.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        SFX.ensureCtx();
+        btnGrab.classList.add('pressed');
+        triggerGrabAction();
+      });
+      btnGrab.addEventListener('pointerup', () => btnGrab.classList.remove('pressed'));
+      btnGrab.addEventListener('pointercancel', () => btnGrab.classList.remove('pressed'));
+
+      btnPowerup.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        SFX.ensureCtx();
+        btnPowerup.classList.add('pressed');
+        triggerPowerupAction();
+      });
+      btnPowerup.addEventListener('pointerup', () => btnPowerup.classList.remove('pressed'));
+      btnPowerup.addEventListener('pointercancel', () => btnPowerup.classList.remove('pressed'));
+
+      // HUD & Modal Buttons
+      btnSound.addEventListener('click', () => {
+        SFX.muted = !SFX.muted;
+        btnSound.textContent = SFX.muted ? '🔇' : '🔊';
+        if (!SFX.muted) SFX.pickup();
+      });
+
+      btnHelp.addEventListener('click', () => {
+        if (state.phase === 'PLAYING') {
+          state.phase = 'TITLE';
+          btnStartGame.textContent = '계속 플레이하기!';
+          titleModal.classList.add('open');
+        }
+      });
+
+      btnStartGame.addEventListener('click', () => {
+        SFX.ensureCtx();
+        SFX.pickup();
+        titleModal.classList.remove('open');
+        if (state.actors.length === 0 || state.phase === 'ENDED') {
+          resetGame();
+        } else if (btnStartGame.textContent.includes('계속')) {
+          state.phase = 'PLAYING';
+          btnStartGame.textContent = '게임 시작하기!';
+        } else {
+          resetGame();
+        }
+      });
+
+      btnToggleReview.addEventListener('click', () => {
+        reviewSection.classList.toggle('open');
+      });
+
+      btnPlayAgain.addEventListener('click', () => {
+        SFX.ensureCtx();
+        resultModal.classList.remove('open');
+        resetGame();
+      });
+
+      // =========================================================================
+      // 17. Animation Loop
+      // =========================================================================
+      state.actors = createActors();
+      updateHUD();
+
+      let lastTs = performance.now();
+      function frame(ts) {
+        const dt = Math.min(0.05, Math.max(0, (ts - lastTs) / 1000));
+        lastTs = ts;
+        update(dt);
+        render();
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
